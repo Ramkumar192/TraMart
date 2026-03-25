@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FlipMart – Premium Store</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<!-- Supabase JS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --forest:#1a3c2e;--emerald:#2d6a4f;--jade:#40916c;--sage:#74c69d;--mint:#b7e4c7;
+  --cream:#fdf8f0;--parchment:#f5ede0;--gold:#c9963a;--gold-lt:#e8b96a;--gold-dk:#9a6f22;
+  --ivory:#fffcf5;--charcoal:#1c2b23;--border:rgba(45,106,79,.18);--border-gold:rgba(201,150,58,.3);
+  --t1:#1a2e24;--t2:#3d5a4a;--t3:#7a9d8a;--red:#c0392b;
+  --shadow:0 2px 16px rgba(26,60,46,.1);--shadow2:0 8px 40px rgba(26,60,46,.18);--r:8px;
+}
+body{font-family:'Jost',sans-serif;background:var(--cream);color:var(--t1);-webkit-font-smoothing:antialiased}
+.serif{font-family:'Cormorant Garamond',serif}
+button,input,select,textarea{font-family:'Jost',sans-serif}
+button{cursor:pointer}
+img{display:block}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--parchment)}
+::-webkit-scrollbar-thumb{background:var(--sage);border-radius:10px}
+/* Core */
+.card{background:var(--ivory);border-radius:var(--r);box-shadow:var(--shadow);border:1px solid var(--border)}
+.btn{border:none;border-radius:4px;padding:10px 22px;font-weight:700;font-size:13px;letter-spacing:.04em;transition:all .2s;display:inline-flex;align-items:center;gap:6px;text-transform:uppercase}
+.btn-green{background:linear-gradient(135deg,var(--emerald),var(--forest));color:#fff;box-shadow:0 3px 12px rgba(45,106,79,.25)}
+.btn-green:hover{background:linear-gradient(135deg,var(--jade),var(--emerald));transform:translateY(-2px)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-dk));color:#fff;box-shadow:0 3px 12px rgba(201,150,58,.25)}
+.btn-gold:hover{background:linear-gradient(135deg,var(--gold-lt),var(--gold));transform:translateY(-2px)}
+.btn-ghost{background:transparent;border:1.5px solid var(--border-gold);color:var(--gold-dk)}
+.btn-ghost:hover{background:rgba(201,150,58,.06);border-color:var(--gold)}
+.btn-red{background:var(--red);color:#fff}.btn-red:hover{opacity:.88}
+.chip{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.chip-grn{background:var(--emerald);color:#fff}
+.chip-gold{background:linear-gradient(135deg,var(--gold),var(--gold-dk));color:#fff}
+.chip-red{background:var(--red);color:#fff}
+.chip-blue{background:#2874f0;color:#fff}
+.chip-orange{background:#e67e00;color:#fff}
+.strike{text-decoration:line-through;color:var(--t3)}
+.disc{color:var(--emerald);font-weight:700}
+.star{color:var(--gold)}
+.flex{display:flex;align-items:center}
+.flex-between{display:flex;align-items:center;justify-content:space-between}
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.anim-up{animation:fadeUp .4s ease both}
+.anim-in{animation:fadeIn .3s ease both}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--emerald);border-radius:50%;animation:spin .7s linear infinite}
+/* Toast */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);padding:12px 28px;border-radius:40px;color:#fff;font-weight:700;font-size:13px;letter-spacing:.04em;z-index:9999;box-shadow:0 6px 28px rgba(0,0,0,.22);white-space:nowrap;animation:fadeUp .3s ease}
+/* Header */
+.header{background:linear-gradient(135deg,var(--forest),var(--charcoal) 60%,#0f2518);position:sticky;top:0;z-index:200;box-shadow:0 2px 20px rgba(0,0,0,.3)}
+.header-inner{max-width:1440px;margin:0 auto;padding:13px 24px;display:flex;align-items:center;gap:20px}
+.logo{color:var(--cream);font-size:26px;font-weight:700;letter-spacing:-.5px;white-space:nowrap;flex-shrink:0;font-family:'Cormorant Garamond',serif;cursor:pointer}
+.logo span{color:var(--gold-lt)}
+.logo small{display:block;font-family:'Jost',sans-serif;font-size:9px;font-weight:600;opacity:.6;margin-top:-4px;letter-spacing:.12em;text-transform:uppercase}
+.search-wrap{flex:1;position:relative;min-width:180px}
+.search-bar{display:flex;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:6px;overflow:hidden;backdrop-filter:blur(8px);transition:border-color .2s}
+.search-bar:focus-within{border-color:rgba(201,150,58,.5)}
+.search-bar input{flex:1;padding:10px 16px;border:none;outline:none;font-size:13px;background:transparent;color:var(--cream)}
+.search-bar input::placeholder{color:rgba(255,255,255,.4)}
+.search-bar button{background:linear-gradient(135deg,var(--gold),var(--gold-dk));border:none;padding:0 20px;color:#fff;font-size:17px}
+.search-drop{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--ivory);border:1px solid var(--border-gold);border-radius:8px;box-shadow:var(--shadow2);z-index:300;overflow:hidden}
+.search-item{padding:11px 16px;display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(45,106,79,.08);transition:background .1s;color:var(--t1)}
+.search-item:hover{background:rgba(45,106,79,.05)}
+.hbtn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.88);border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;transition:all .15s;letter-spacing:.04em;text-transform:uppercase;position:relative;white-space:nowrap}
+.hbtn:hover{background:rgba(201,150,58,.2);border-color:rgba(201,150,58,.4);color:var(--gold-lt)}
+.hbtn-badge{position:absolute;top:-7px;right:-7px;background:var(--gold);color:var(--forest);font-size:10px;font-weight:900;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--forest)}
+.catbar{background:rgba(0,0,0,.25);overflow-x:auto;scrollbar-width:none;border-top:1px solid rgba(255,255,255,.06)}
+.catbar::-webkit-scrollbar{display:none}
+.catbar-inner{max-width:1440px;margin:0 auto;padding:0 16px;display:flex}
+.catbtn{background:transparent;border:none;color:rgba(255,255,255,.65);padding:9px 14px;font-size:11px;font-weight:700;white-space:nowrap;display:flex;align-items:center;gap:5px;transition:all .15s;letter-spacing:.05em;text-transform:uppercase;border-bottom:2px solid transparent}
+.catbtn:hover,.catbtn.active{color:var(--gold-lt);border-bottom-color:var(--gold)}
+/* User Dropdown */
+.user-menu{position:absolute;top:calc(100% + 10px);right:0;background:var(--ivory);border:1px solid var(--border-gold);border-radius:10px;box-shadow:var(--shadow2);min-width:225px;overflow:hidden;z-index:400;animation:fadeUp .2s ease}
+.user-menu-head{padding:14px 18px;background:rgba(45,106,79,.04);border-bottom:1px solid var(--border)}
+.menu-item{padding:11px 18px;display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;border-bottom:1px solid rgba(45,106,79,.06);transition:background .12s;color:var(--t1);font-weight:600}
+.menu-item:last-child{border-bottom:none}
+.menu-item:hover{background:rgba(45,106,79,.05)}
+.menu-item.danger{color:var(--red)}.menu-item.danger:hover{background:rgba(192,57,43,.05)}
+/* Products */
+.pcard{background:var(--ivory);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;transition:transform .25s,box-shadow .25s,border-color .2s;cursor:pointer;position:relative;display:flex;flex-direction:column;border:1px solid var(--border)}
+.pcard:hover{transform:translateY(-6px);box-shadow:var(--shadow2);border-color:var(--border-gold)}
+.pcard-img{overflow:hidden;background:linear-gradient(135deg,#f9f6ee,#f2eddf);padding:18px;display:flex;align-items:center;justify-content:center;height:185px;position:relative}
+.pcard-img img{max-width:100%;max-height:100%;object-fit:contain;transition:transform .45s;filter:drop-shadow(0 4px 12px rgba(26,60,46,.1))}
+.pcard:hover .pcard-img img{transform:scale(1.08)}
+.pcard-body{padding:14px;flex:1;display:flex;flex-direction:column}
+.pcard-brand{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:4px}
+.pcard-name{font-size:13px;font-weight:600;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:8px}
+.rat-badge{background:linear-gradient(135deg,var(--emerald),var(--jade));color:#fff;font-size:11px;font-weight:800;padding:2px 7px;border-radius:3px;display:inline-flex;align-items:center;gap:2px}
+.pcard-foot{padding:0 14px 14px}
+.wish-btn{position:absolute;top:10px;right:10px;background:rgba(255,252,245,.92);border:1px solid var(--border-gold);border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);transition:all .2s;z-index:2}
+.wish-btn:hover{transform:scale(1.15)}
+.badge-pos{position:absolute;top:10px;left:10px;z-index:2}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:18px}
+/* Section */
+.section{background:var(--ivory);border-radius:12px;box-shadow:var(--shadow);padding:26px;margin-bottom:20px;border:1px solid var(--border)}
+.sec-head{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;margin-bottom:4px;color:var(--forest)}
+.sec-sub{font-size:11px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:18px}
+/* Banner */
+.banner{border-radius:12px;padding:52px 60px;position:relative;overflow:hidden;min-height:215px;display:flex;align-items:center;border:1px solid var(--border-gold);margin-bottom:20px}
+.banner::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.3),transparent 70%);pointer-events:none}
+.banner-dots{position:absolute;bottom:16px;right:20px;display:flex;gap:7px;z-index:3}
+.bdot{height:6px;border-radius:3px;cursor:pointer;transition:all .3s}
+.bdot.on{width:22px;background:var(--gold)}
+.bdot:not(.on){width:6px;background:rgba(255,255,255,.4)}
+/* Countdown */
+.cdunit{background:linear-gradient(135deg,var(--forest),var(--charcoal));color:var(--gold-lt);font-size:18px;font-weight:800;padding:8px 13px;border-radius:6px;min-width:46px;text-align:center;border:1px solid rgba(201,150,58,.3)}
+.cdsep{color:var(--gold);font-size:20px;font-weight:900}
+/* Cat grid */
+.cat-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 10px;border-radius:10px;cursor:pointer;transition:all .2s;border:1px solid transparent}
+.cat-item:hover{background:rgba(45,106,79,.05);border-color:var(--border-gold);transform:translateY(-2px)}
+/* Filter sidebar */
+.filter-sidebar{width:232px;flex-shrink:0;position:sticky;top:80px}
+.fg{padding:16px 18px;border-bottom:1px solid var(--border)}
+.fg:last-child{border-bottom:none}
+.fl{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:10px}
+.cr{display:flex;align-items:center;gap:9px;margin-bottom:9px;font-size:13px;cursor:pointer;color:var(--t2)}
+.cr input{accent-color:var(--emerald);width:15px;height:15px}
+/* Cart */
+.qty-ctrl{display:flex;align-items:center;gap:10px;border:1.5px solid var(--border-gold);border-radius:6px;overflow:hidden}
+.qty-ctrl button{background:rgba(45,106,79,.06);border:none;width:34px;height:34px;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--forest)}
+.qty-ctrl button:hover{background:rgba(45,106,79,.14)}
+.qty-ctrl span{min-width:28px;text-align:center;font-weight:800;font-size:15px}
+.price-summary{background:var(--ivory);border-radius:var(--r);box-shadow:var(--shadow);padding:24px;position:sticky;top:82px;border:1px solid var(--border-gold)}
+.pr{display:flex;justify-content:space-between;font-size:13px;padding:9px 0;border-bottom:1px solid rgba(45,106,79,.07)}
+.pr.total{font-size:17px;font-weight:900;border-bottom:none;padding-top:14px;color:var(--forest)}
+/* Stepper */
+.stepper{display:flex;margin-bottom:24px;background:var(--ivory);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;border:1px solid var(--border)}
+.step{flex:1;padding:14px 16px;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;transition:background .2s;cursor:pointer}
+.step.done,.step.active{background:linear-gradient(135deg,var(--emerald),var(--forest));color:#fff}
+.step-n{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0}
+.step.done .step-n,.step.active .step-n{background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.3)}
+.step:not(.active):not(.done) .step-n{background:var(--border);color:var(--t3)}
+/* Address card */
+.addr-card{border:2px solid var(--border);border-radius:var(--r);padding:16px;cursor:pointer;transition:all .2s}
+.addr-card:hover{border-color:var(--jade)}
+.addr-card.sel{border-color:var(--emerald);background:rgba(45,106,79,.04)}
+/* Tracking */
+@keyframes gp{0%,100%{box-shadow:0 0 0 4px rgba(201,150,58,.1)}50%{box-shadow:0 0 0 8px rgba(201,150,58,.25)}}
+/* Login */
+.login-wrap{min-height:78vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{width:440px;background:var(--ivory);border-radius:12px;box-shadow:var(--shadow2);overflow:hidden;border:1px solid var(--border-gold)}
+.login-left{background:linear-gradient(155deg,var(--forest),var(--charcoal));padding:40px 28px;color:var(--cream);position:relative;overflow:hidden;flex:0 0 185px}
+.login-left::before{content:'✦';position:absolute;font-size:180px;opacity:.04;bottom:-40px;right:-20px;color:var(--gold)}
+.ig{margin-bottom:15px}
+.ig label{display:block;font-size:10px;font-weight:800;color:var(--t3);margin-bottom:5px;letter-spacing:.1em;text-transform:uppercase}
+.ig input,.ig select{width:100%;border:1.5px solid var(--border);border-radius:5px;padding:10px 13px;font-size:13px;outline:none;transition:border-color .15s;background:var(--cream);color:var(--t1)}
+.ig input:focus,.ig select:focus{border-color:var(--jade)}
+/* Modal */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn .2s ease}
+.md{background:var(--ivory);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-width:480px;width:100%;max-height:90vh;overflow-y:auto;border:1px solid var(--border-gold)}
+.md-h{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--ivory);z-index:5}
+.md-b{padding:22px}
+.md-f{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+/* Empty */
+.empty{text-align:center;padding:60px 20px}
+.empty h2{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;margin-bottom:8px;color:var(--forest)}
+.empty p{color:var(--t3);font-size:14px;margin-bottom:22px}
+/* Spec table */
+.spec-table td{padding:10px 16px;font-size:13px;border-bottom:1px solid rgba(45,106,79,.06)}
+.spec-table tr:nth-child(even) td:first-child{background:rgba(45,106,79,.03)}
+.spec-table td:first-child{width:155px;color:var(--t3);font-weight:600}
+/* Tab */
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:20px}
+.tab{padding:10px 20px;background:transparent;border:none;font-size:12px;font-weight:700;color:var(--t3);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;letter-spacing:.05em;text-transform:uppercase}
+.tab.active{color:var(--emerald);border-bottom-color:var(--emerald)}
+/* Error */
+.err{color:var(--red);font-size:12px;margin-top:4px;font-weight:600}
+@media(max-width:768px){.header-inner{flex-wrap:wrap;gap:10px}.hbtn .lbl{display:none}.filter-sidebar{display:none}.pgrid{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px}.fg2{grid-template-columns:1fr}}
+@media(max-width:480px){.pgrid{grid-template-columns:1fr 1fr;gap:10px}.pcard-img{height:145px}}
+</style>
+</head>
+<body>
+<div id="root"><div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:16px"><div class="spinner"></div><p style="color:var(--t3);font-family:Jost,sans-serif;font-size:14px">Connecting to FlipMart…</p></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useEffect,useContext,createContext,useRef,useCallback,useMemo} = React;
+
+/* ══════════════════════════════════════════
+   SUPABASE CONFIG — paste your values here
+══════════════════════════════════════════ */
+const SUPABASE_URL  = 'https://vfvtousnbkraafrhrjal.supabase.co';        // e.g. https://abcdef.supabase.co
+const SUPABASE_ANON = 'sb_publishable_nKOujMik6XpsfMONRpPJQQ_JlH6sqMX';   // from Project Settings → API
+/* ══════════════════════════════════════════ */
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+/* ── Static data ── */
+const CATEGORIES=[
+  {name:"Mobiles",icon:"📱"},{name:"Laptops",icon:"💻"},{name:"TVs",icon:"📺"},
+  {name:"Men Fashion",icon:"👔"},{name:"Women Fashion",icon:"👗"},{name:"Kids Fashion",icon:"🧒"},
+  {name:"Home & Kitchen",icon:"🏠"},{name:"Appliances",icon:"⚙️"},{name:"Books",icon:"📚"},
+  {name:"Sports",icon:"🏃"},{name:"Beauty",icon:"💄"},{name:"Toys",icon:"🧸"},
+  {name:"Electronics",icon:"🎧"},{name:"Grocery",icon:"🛒"},
+];
+const BANNERS=[
+  {bg:"linear-gradient(135deg,#1a3c2e,#2d6a4f,#0f2518)",emoji:"🌿",title:"Premium Electronics",sub:"Curated tech from the world's finest brands",cta:"Discover",cat:"Electronics"},
+  {bg:"linear-gradient(135deg,#3d2b1f,#6b4423,#2c1810)",emoji:"👑",title:"Luxury Fashion",sub:"Exclusive styles for the discerning taste",cta:"Explore",cat:"Men Fashion"},
+  {bg:"linear-gradient(135deg,#1c2b23,#2d4a35,#40916c)",emoji:"🏡",title:"Home Refinement",sub:"Transform your living space with elegance",cta:"Shop Now",cat:"Home & Kitchen"},
+];
+const ORDER_STEPS=[
+  {key:"placed",label:"Order Placed",icon:"📋"},
+  {key:"confirmed",label:"Confirmed",icon:"✅"},
+  {key:"packed",label:"Packed",icon:"📦"},
+  {key:"shipped",label:"Shipped",icon:"🚚"},
+  {key:"out",label:"Out for Delivery",icon:"🛵"},
+  {key:"delivered",label:"Delivered",icon:"🎉"},
+];
+const STATUS_CHIP={placed:"chip-blue",confirmed:"chip-grn",packed:"chip-grn",shipped:"chip-orange",out:"chip-orange",delivered:"chip-grn",cancelled:"chip-red"};
+const STATUS_LBL={placed:"Placed",confirmed:"Confirmed",packed:"Packed",shipped:"Shipped",out:"Out for Delivery",delivered:"Delivered",cancelled:"Cancelled"};
+
+/* ── Ctx ── */
+const Ctx = createContext();
+function Store({children}){
+  const [user,    setUser]   = useState(null);
+  const [profile, setProfile]= useState(null);
+  const [authLoading,setAL]  = useState(true);
+  const [products,setProds]  = useState([]);
+  const [cart,    setCart]   = useState([]);
+  const [wishlist,setWish]   = useState([]);
+  const [page,    setPage]   = useState("home");
+  const [selProd, setSelProd]= useState(null);
+  const [selCat,  setSelCat] = useState(null);
+  const [search,  setSearch] = useState("");
+  const [toast,   setToast]  = useState(null);
+  const [recentlyViewed,setRV]= useState([]);
+
+  const fmt = n => "₹"+n.toLocaleString("en-IN");
+  const pct = (p,m) => Math.round((m-p)/m*100);
+
+  /* Auth listener */
+  useEffect(()=>{
+    const {data:{subscription}} = sb.auth.onAuthStateChange(async(_,session)=>{
+      setUser(session?.user||null);
+      if(session?.user){
+        const {data} = await sb.from("profiles").select("*").eq("id",session.user.id).single();
+        setProfile(data);
+      } else { setProfile(null); }
+      setAL(false);
+    });
+    return ()=>subscription.unsubscribe();
+  },[]);
+
+  /* Load products */
+  useEffect(()=>{
+    sb.from("products").select("*").eq("is_active",true).order("created_at",{ascending:false})
+      .then(({data})=>{ if(data) setProds(data.map(p=>({...p,rev:p.review_count}))); });
+  },[]);
+
+  const showToast = useCallback((msg,type="success")=>{ setToast({msg,type}); setTimeout(()=>setToast(null),3000); },[]);
+
+  const addToCart = useCallback((p)=>{
+    setCart(prev=>{ const ex=prev.find(i=>i.id===p.id); return ex?prev.map(i=>i.id===p.id?{...i,qty:i.qty+1}:i):[...prev,{...p,qty:1}]; });
+    showToast("Added to cart ✦");
+  },[showToast]);
+
+  const removeFromCart = useCallback(id=>setCart(p=>p.filter(i=>i.id!==id)),[]);
+  const updateQty = useCallback((id,qty)=>{ if(qty<1){removeFromCart(id);return;} setCart(p=>p.map(i=>i.id===id?{...i,qty}:i)); },[removeFromCart]);
+
+  const toggleWish = useCallback((p)=>{
+    setWish(prev=>{ const ex=prev.find(i=>i.id===p.id); showToast(ex?"Removed from wishlist":"Saved ❤️"); return ex?prev.filter(i=>i.id!==p.id):[...prev,p]; });
+  },[showToast]);
+
+  const viewProduct = useCallback((p)=>{
+    setSelProd(p); setRV(prev=>[p,...prev.filter(i=>i.id!==p.id)].slice(0,8)); setPage("product");
+  },[]);
+
+  const placeOrder = useCallback(async(address,payment)=>{
+    if(!user){showToast("Please login first","error");setPage("login");return;}
+    const items = cart.map(i=>({id:i.id,name:i.name,brand:i.brand,price:i.price,mrp:i.mrp,qty:i.qty,img:i.img}));
+    const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+    const {error} = await sb.from("orders").insert({
+      user_id:user.id, user_name:profile?.name||user.email.split("@")[0], user_email:user.email,
+      items, address, payment, status:"placed", total,
+      tracking_steps:[{step:"placed",time:new Date().toISOString(),done:true}],
+    });
+    if(error){ showToast("Order failed: "+error.message,"error"); return; }
+    setCart([]);
+    showToast("Order placed! ✦ Track in Orders.");
+    setPage("orders");
+  },[user,profile,cart,showToast]);
+
+  const logout = useCallback(async()=>{
+    await sb.auth.signOut(); setUser(null); setProfile(null); setCart([]); setWish([]); setPage("home"); showToast("Logged out");
+  },[showToast]);
+
+  const cartTotal = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const cartMRP   = cart.reduce((s,i)=>s+i.mrp*i.qty,0);
+  const cartCount = cart.reduce((s,i)=>s+i.qty,0);
+  const inWish    = id => wishlist.some(i=>i.id===id);
+
+  return <Ctx.Provider value={{user,profile,authLoading,logout,products,setProds,cart,cartTotal,cartMRP,cartCount,addToCart,removeFromCart,updateQty,wishlist,toggleWish,inWish,placeOrder,page,setPage,selProd,viewProduct,selCat,setSelCat,search,setSearch,toast,showToast,recentlyViewed,fmt,pct}}>{children}</Ctx.Provider>;
+}
+
+/* ── Utils ── */
+const Stars=({r=0})=><span style={{fontSize:12,letterSpacing:1}}>{[1,2,3,4,5].map(i=><span key={i} className="star">{i<=Math.floor(r)?"★":(i===Math.ceil(r)&&r%1>=.5?"⯨":"☆")}</span>)}</span>;
+const RatBadge=({r})=><span className="rat-badge">{r}&thinsp;<span className="star" style={{fontSize:10}}>★</span></span>;
+const Spinner=()=><div style={{display:"flex",justifyContent:"center",padding:40}}><div className="spinner"/></div>;
+
+function Toast(){
+  const {toast}=useContext(Ctx); if(!toast)return null;
+  const bg=toast.type==="error"?"#c0392b":toast.type==="warn"?"#e67e00":"linear-gradient(135deg,var(--emerald),var(--forest))";
+  return <div className="toast" style={{background:bg}}>{toast.msg}</div>;
+}
+
+/* ── Header ── */
+function Header(){
+  const {page,setPage,cartCount,wishlist,user,profile,logout,search,setSearch,setSelCat,selCat}=useContext(Ctx);
+  const [sugg,setSugg]=useState([]);const [showS,setShowS]=useState(false);
+  const [showMenu,setShowMenu]=useState(false); const menuRef=useRef();
+  const {products}=useContext(Ctx);
+
+  useEffect(()=>{ if(search.length>1){setSugg(products.filter(p=>p.name.toLowerCase().includes(search.toLowerCase())||p.brand?.toLowerCase().includes(search.toLowerCase())).slice(0,6));setShowS(true);}else{setSugg([]);setShowS(false);} },[search,products]);
+  useEffect(()=>{ const h=e=>{if(menuRef.current&&!menuRef.current.contains(e.target))setShowMenu(false);}; document.addEventListener("mousedown",h); return()=>document.removeEventListener("mousedown",h); },[]);
+
+  return(
+    <header className="header">
+      <div className="header-inner">
+        <div className="logo" onClick={()=>setPage("home")}>Flip<span>Mart</span><small>✦ Premium Collection</small></div>
+        <div className="search-wrap">
+          <div className="search-bar">
+            <input value={search} onChange={e=>setSearch(e.target.value)} onFocus={()=>sugg.length&&setShowS(true)} onBlur={()=>setTimeout(()=>setShowS(false),180)} placeholder="Search products, brands…"/>
+            <button>🔍</button>
+          </div>
+          {showS&&sugg.length>0&&(
+            <div className="search-drop anim-in">
+              {sugg.map(p=><div key={p.id} className="search-item" onMouseDown={()=>{setSearch("");setShowS(false);}}><span style={{color:"var(--gold)"}}>✦</span><span style={{flex:1,fontWeight:600}}>{p.name}</span><span style={{fontSize:11,color:"var(--t3)"}}>{p.category}</span></div>)}
+            </div>
+          )}
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+          {user?(
+            <div style={{position:"relative"}} ref={menuRef}>
+              <button className="hbtn" onClick={()=>setShowMenu(m=>!m)}>
+                <span style={{fontSize:16,lineHeight:1}}>◈</span>
+                <span className="lbl">{(profile?.name||user.email.split("@")[0]).split(" ")[0]}</span>
+                <span style={{fontSize:10,opacity:.7}}>▾</span>
+              </button>
+              {showMenu&&(
+                <div className="user-menu">
+                  <div className="user-menu-head">
+                    <div style={{fontWeight:800,fontSize:14,color:"var(--forest)"}}>{profile?.name||"User"}</div>
+                    <div style={{fontSize:12,color:"var(--t3)",marginTop:2}}>{user.email}</div>
+                    {profile?.role==="seller"&&<span className="chip chip-gold" style={{marginTop:6}}>Seller Account</span>}
+                  </div>
+                  {[["👤","My Account","account"],["📦","My Orders","orders"],["📍","Manage Addresses","account-addr"],["❤️","Wishlist","wishlist"]].map(([ic,lb,pg])=>(
+                    <div key={pg} className="menu-item" onClick={()=>{setPage(pg);setShowMenu(false);}}>{ic} {lb}</div>
+                  ))}
+                  {profile?.role==="seller"&&<div className="menu-item" onClick={()=>{window.open("seller.html","_blank");setShowMenu(false);}}>🏪 Seller Dashboard ↗</div>}
+                  <div className="menu-item danger" onClick={()=>{logout();setShowMenu(false);}}>🚪 Logout</div>
+                </div>
+              )}
+            </div>
+          ):(
+            <button className="hbtn" style={{background:"linear-gradient(135deg,var(--gold),var(--gold-dk))",color:"#fff",border:"none",padding:"9px 22px"}} onClick={()=>setPage("login")}>Login</button>
+          )}
+          <button className="hbtn" onClick={()=>setPage("wishlist")} style={{position:"relative"}}>❤️ <span className="lbl">Saved</span>{wishlist.length>0&&<span className="hbtn-badge">{wishlist.length}</span>}</button>
+          <button className="hbtn" onClick={()=>setPage("cart")} style={{position:"relative"}}>🛒 <span className="lbl">Cart</span>{cartCount>0&&<span className="hbtn-badge">{cartCount}</span>}</button>
+        </div>
+      </div>
+      <nav className="catbar"><div className="catbar-inner">{CATEGORIES.map(c=><button key={c.name} className={`catbtn${selCat===c.name&&page==="listing"?" active":""}`} onClick={()=>{setSelCat(c.name);setPage("listing");}}>{c.icon} {c.name}</button>)}</div></nav>
+    </header>
+  );
+}
+
+/* ── Product Card ── */
+function PCard({p}){
+  const {addToCart,toggleWish,inWish,viewProduct,fmt,pct}=useContext(Ctx);
+  const disc=pct(p.price,p.mrp);
+  return(
+    <div className="pcard">
+      {p.badge&&<div className="badge-pos"><span className="chip chip-gold" style={{fontSize:9}}>{p.badge}</span></div>}
+      <button className="wish-btn" onClick={e=>{e.stopPropagation();toggleWish(p);}}>{inWish(p.id)?"❤️":"🤍"}</button>
+      <div className="pcard-img" onClick={()=>viewProduct(p)}><img src={p.img} alt={p.name} loading="lazy"/></div>
+      <div className="pcard-body" onClick={()=>viewProduct(p)}>
+        <div className="pcard-brand">{p.brand}</div>
+        <div className="pcard-name">{p.name}</div>
+        <div className="flex" style={{gap:6,marginBottom:9}}><RatBadge r={p.rating}/><span style={{fontSize:11,color:"var(--t3)"}}>({(p.rev||p.review_count||0).toLocaleString()})</span></div>
+        <div><span style={{fontSize:17,fontWeight:900,color:"var(--forest)"}}>{fmt(p.price)}</span><span className="strike" style={{fontSize:12,marginLeft:6}}>{fmt(p.mrp)}</span><span className="disc" style={{fontSize:12,marginLeft:4}}>{disc}% off</span></div>
+        {p.emi&&<div style={{fontSize:11,color:"var(--t3)",marginTop:4}}>EMI from {p.emi}</div>}
+      </div>
+      <div className="pcard-foot"><button className="btn btn-green" style={{width:"100%",justifyContent:"center",padding:"8px",fontSize:11}} onClick={e=>{e.stopPropagation();addToCart(p);}}>Add to Cart</button></div>
+    </div>
+  );
+}
+
+/* ── Home ── */
+function HomePage(){
+  const {setSelCat,setPage,products,pct}=useContext(Ctx);
+  const [bIdx,setBIdx]=useState(0);
+  const [secs,setSecs]=useState(3*3600+47*60);
+  useEffect(()=>{const t=setInterval(()=>setBIdx(i=>(i+1)%BANNERS.length),4500);return()=>clearInterval(t);},[]);
+  useEffect(()=>{const t=setInterval(()=>setSecs(s=>s>0?s-1:86399),1000);return()=>clearInterval(t);},[]);
+  const pad=n=>String(n).padStart(2,"0");
+  const h=Math.floor(secs/3600),m=Math.floor((secs%3600)/60),s=secs%60;
+  const b=BANNERS[bIdx];
+  const deals=products.filter(p=>p.badge||pct(p.price,p.mrp)>=40).slice(0,6);
+  const top=products.filter(p=>p.rating>=4.5).slice(0,8);
+
+  return(
+    <div style={{maxWidth:1440,margin:"0 auto",padding:16}}>
+      {/* Hero */}
+      <div className="banner anim-up" style={{background:b.bg}}>
+        <div style={{position:"absolute",right:60,top:"50%",transform:"translateY(-50%)",fontSize:110,opacity:.1,pointerEvents:"none"}}>{b.emoji}</div>
+        <div style={{position:"absolute",top:16,right:16,color:"rgba(201,150,58,.3)",fontSize:20,letterSpacing:8}}>✦ ✦ ✦</div>
+        <div style={{position:"relative",zIndex:2}}>
+          <div style={{fontSize:11,fontWeight:700,letterSpacing:".16em",textTransform:"uppercase",color:"var(--gold-lt)",marginBottom:10}}>✦ FlipMart Premium</div>
+          <h1 className="serif" style={{color:"#fff",fontSize:40,fontWeight:700,marginBottom:10,lineHeight:1.1,textShadow:"0 2px 16px rgba(0,0,0,.2)"}}>{b.title}</h1>
+          <p style={{color:"rgba(255,255,255,.75)",fontSize:15,marginBottom:24}}>{b.sub}</p>
+          <button className="btn btn-gold" style={{fontSize:12,padding:"12px 28px"}} onClick={()=>{setSelCat(b.cat);setPage("listing");}}>{b.cta} →</button>
+        </div>
+        <div className="banner-dots">{BANNERS.map((_,i)=><div key={i} className={`bdot${bIdx===i?" on":""}`} onClick={()=>setBIdx(i)}/>)}</div>
+      </div>
+
+      {/* Categories */}
+      <div className="section anim-up" style={{animationDelay:".04s"}}>
+        <h2 className="sec-head">✦ Shop by Category</h2><p className="sec-sub">Curated collections</p>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(90px,1fr))",gap:10}}>
+          {CATEGORIES.map(c=><div key={c.name} className="cat-item" onClick={()=>{setSelCat(c.name);setPage("listing");}}><div style={{fontSize:32}}>{c.icon}</div><div style={{fontSize:11,fontWeight:700,color:"var(--t2)"}}>{c.name}</div></div>)}
+        </div>
+      </div>
+
+      {/* Deal of Day */}
+      <div className="section anim-up" style={{animationDelay:".07s"}}>
+        <div className="flex-between" style={{marginBottom:6,flexWrap:"wrap",gap:12}}>
+          <div><h2 className="sec-head" style={{margin:0}}>🔥 Deal of the Day</h2><p className="sec-sub" style={{margin:0}}>Limited time only</p></div>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <span style={{fontSize:11,color:"var(--t3)",fontWeight:700,textTransform:"uppercase",letterSpacing:".06em"}}>Ends in</span>
+            <div className="cdunit">{pad(h)}</div><span className="cdsep">:</span>
+            <div className="cdunit">{pad(m)}</div><span className="cdsep">:</span>
+            <div className="cdunit">{pad(s)}</div>
+          </div>
+        </div>
+        {deals.length===0?<div style={{textAlign:"center",padding:"40px 0",color:"var(--t3)"}}>Loading products…</div>:<div className="pgrid">{deals.map(p=><PCard key={p.id} p={p}/>)}</div>}
+      </div>
+
+      <div className="section anim-up" style={{animationDelay:".1s"}}><h2 className="sec-head">⭐ Finest Selections</h2><p className="sec-sub">Highest rated by customers</p><div className="pgrid">{top.map(p=><PCard key={p.id} p={p}/>)}</div></div>
+      <div className="section anim-up" style={{animationDelay:".13s"}}><h2 className="sec-head">✨ All Products</h2><div className="pgrid">{products.slice(0,16).map(p=><PCard key={p.id} p={p}/>)}</div></div>
+    </div>
+  );
+}
+
+/* ── Listing ── */
+function ListingPage(){
+  const {selCat,search,products,fmt,pct}=useContext(Ctx);
+  const [sort,setSort]=useState("pop");
+  const [maxPr,setMaxPr]=useState(200000);
+  const [minRat,setMinRat]=useState(0);
+  const [brands,setBrands]=useState([]);
+  const [view,setView]=useState("grid");
+
+  let prods=selCat?products.filter(p=>p.category===selCat):search?products.filter(p=>p.name.toLowerCase().includes(search.toLowerCase())||p.brand?.toLowerCase().includes(search.toLowerCase())):products;
+  if(brands.length)prods=prods.filter(p=>brands.includes(p.brand));
+  prods=prods.filter(p=>p.price<=maxPr&&p.rating>=minRat);
+  if(sort==="priceL")prods=[...prods].sort((a,b)=>a.price-b.price);
+  else if(sort==="priceH")prods=[...prods].sort((a,b)=>b.price-a.price);
+  else if(sort==="rating")prods=[...prods].sort((a,b)=>b.rating-a.rating);
+  else if(sort==="disc")prods=[...prods].sort((a,b)=>pct(b.price,b.mrp)-pct(a.price,a.mrp));
+  const allBrands=[...new Set(products.filter(p=>!selCat||p.category===selCat).map(p=>p.brand).filter(Boolean))];
+
+  return(
+    <div style={{maxWidth:1440,margin:"0 auto",padding:16,display:"flex",gap:16,alignItems:"flex-start"}}>
+      <div className="card filter-sidebar">
+        <div style={{padding:"15px 18px",borderBottom:"1px solid var(--border)",background:"rgba(45,106,79,.04)"}}><h3 className="serif" style={{fontWeight:700,fontSize:17,color:"var(--forest)"}}>Refine</h3></div>
+        <div className="fg"><div className="fl">Price Range</div>
+          <input type="range" min={0} max={200000} step={500} value={maxPr} onChange={e=>setMaxPr(+e.target.value)} style={{width:"100%",accentColor:"var(--emerald)",marginBottom:8}}/>
+          <div className="flex-between" style={{fontSize:12,color:"var(--t3)"}}><span>₹0</span><span style={{fontWeight:700,color:"var(--emerald)"}}>{fmt(maxPr)}</span></div>
+        </div>
+        <div className="fg"><div className="fl">Min Rating</div>
+          {[4,3,2,0].map(r=><label key={r} className="cr"><input type="radio" name="rat" checked={minRat===r} onChange={()=>setMinRat(r)}/>{r>0?<><Stars r={r}/> & above</>:"All"}</label>)}
+        </div>
+        <div className="fg"><div className="fl">Brands</div>
+          <div style={{maxHeight:180,overflowY:"auto"}}>{allBrands.map(br=><label key={br} className="cr"><input type="checkbox" checked={brands.includes(br)} onChange={()=>setBrands(p=>p.includes(br)?p.filter(b=>b!==br):[...p,br])}/>{br}</label>)}</div>
+        </div>
+        <div className="fg"><button className="btn btn-ghost" style={{width:"100%",justifyContent:"center",fontSize:11}} onClick={()=>{setMaxPr(200000);setMinRat(0);setBrands([])}}>Reset</button></div>
+      </div>
+      <div style={{flex:1,minWidth:0}}>
+        <div className="card" style={{padding:"12px 18px",marginBottom:14,display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
+          <h2 className="serif" style={{fontSize:19,fontWeight:700,flex:1,color:"var(--forest)"}}>{selCat||(search?`"${search}"`:"All Products")}<span style={{fontWeight:500,fontSize:13,color:"var(--t3)",marginLeft:8,fontFamily:"Jost"}}>({prods.length})</span></h2>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <span style={{fontSize:11,color:"var(--t3)",fontWeight:700,textTransform:"uppercase"}}>Sort:</span>
+            <select value={sort} onChange={e=>setSort(e.target.value)} style={{border:"1.5px solid var(--border-gold)",borderRadius:5,padding:"5px 10px",fontSize:12,background:"var(--ivory)",color:"var(--t1)",fontFamily:"Jost"}}>
+              <option value="pop">Popularity</option><option value="priceL">Price ↑</option><option value="priceH">Price ↓</option><option value="rating">Rating</option><option value="disc">Discount</option>
+            </select>
+          </div>
+          <div style={{display:"flex",gap:6}}>{["grid","list"].map(v=><button key={v} onClick={()=>setView(v)} style={{border:"1.5px solid "+(view===v?"var(--emerald)":"var(--border)"),background:view===v?"var(--emerald)":"var(--ivory)",color:view===v?"#fff":"var(--t3)",borderRadius:5,padding:"5px 11px",fontSize:16}}>{v==="grid"?"⊞":"☰"}</button>)}</div>
+        </div>
+        {prods.length===0?<div className="empty anim-up"><div style={{fontSize:64,marginBottom:16}}>🌿</div><h2>Nothing found</h2><p>Try adjusting filters</p></div>:
+        view==="grid"?<div className="pgrid">{prods.map(p=><PCard key={p.id} p={p}/>)}</div>:
+        <div>{prods.map(p=>{
+          const {addToCart,toggleWish,inWish,viewProduct,fmt,pct}=useContext(Ctx);
+          return <div key={p.id} className="card" style={{display:"flex",gap:20,padding:20,marginBottom:10,cursor:"pointer",transition:"box-shadow .2s"}} onMouseEnter={e=>e.currentTarget.style.boxShadow="var(--shadow2)"} onMouseLeave={e=>e.currentTarget.style.boxShadow=""}>
+            <img src={p.img} alt={p.name} style={{width:100,height:100,objectFit:"contain",flexShrink:0}} onClick={()=>viewProduct(p)}/>
+            <div style={{flex:1}} onClick={()=>viewProduct(p)}>
+              <div style={{fontSize:10,color:"var(--t3)",fontWeight:700,textTransform:"uppercase",letterSpacing:".07em",marginBottom:3}}>{p.brand}</div>
+              <div style={{fontSize:14,fontWeight:700,marginBottom:6}}>{p.name}</div>
+              <div className="flex" style={{gap:8,marginBottom:8}}><RatBadge r={p.rating}/><span style={{fontSize:12,color:"var(--t3)"}}>({(p.rev||p.review_count||0).toLocaleString()})</span>{p.badge&&<span className="chip chip-gold" style={{fontSize:9}}>{p.badge}</span>}</div>
+              <div className="flex" style={{gap:10}}><span style={{fontSize:19,fontWeight:800,color:"var(--forest)"}}>{fmt(p.price)}</span><span className="strike" style={{fontSize:12}}>{fmt(p.mrp)}</span><span className="disc" style={{fontSize:12}}>{pct(p.price,p.mrp)}% off</span></div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8,flexShrink:0}}>
+              <button className="btn btn-green" style={{fontSize:11,whiteSpace:"nowrap"}} onClick={()=>addToCart(p)}>Add to Cart</button>
+              <button className="btn btn-ghost" style={{fontSize:11}} onClick={()=>toggleWish(p)}>{inWish(p.id)?"❤️ Saved":"🤍 Save"}</button>
+            </div>
+          </div>;
+        })}</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ── Product Detail ── */
+function ProductPage(){
+  const {selProd:p,addToCart,toggleWish,inWish,setPage,recentlyViewed,products,fmt,pct}=useContext(Ctx);
+  const [tab,setTab]=useState("specs");const [pin,setPin]=useState("");const [del,setDel]=useState(null);
+  if(!p)return null;
+  const disc=pct(p.price,p.mrp);
+  const similar=products.filter(pr=>pr.category===p.category&&pr.id!==p.id).slice(0,4);
+  const specs=typeof p.specs==="string"?JSON.parse(p.specs||"{}"):p.specs||{};
+
+  return(
+    <div style={{maxWidth:1440,margin:"0 auto",padding:16}}>
+      <div style={{fontSize:12,color:"var(--gold-dk)",marginBottom:14,cursor:"pointer",fontWeight:700,letterSpacing:".06em",textTransform:"uppercase"}} onClick={()=>setPage("listing")}>← Back</div>
+      <div className="card" style={{padding:28,marginBottom:16}}>
+        <div style={{display:"flex",gap:32,flexWrap:"wrap"}}>
+          <div style={{display:"flex",gap:10,flexShrink:0}}>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {[0,1,2].map(i=><div key={i} style={{border:"2px solid "+(i===0?"var(--gold)":"transparent"),borderRadius:6,width:64,height:64,padding:6,background:"linear-gradient(135deg,#f9f6ee,#f0ead8)",cursor:"pointer"}}><img src={p.img} alt="" style={{width:"100%",height:"100%",objectFit:"contain"}}/></div>)}
+            </div>
+            <div style={{width:310,border:"1px solid var(--border-gold)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",padding:30,background:"linear-gradient(135deg,#fdfaf3,#f5ede0)",minHeight:330,overflow:"hidden"}}>
+              <img src={p.img} alt={p.name} style={{maxWidth:"100%",maxHeight:280,objectFit:"contain",filter:"drop-shadow(0 8px 24px rgba(26,60,46,.15))",transition:"transform .4s"}} onMouseEnter={e=>e.target.style.transform="scale(1.1)"} onMouseLeave={e=>e.target.style.transform=""}/>
+            </div>
+          </div>
+          <div style={{flex:1,minWidth:260}}>
+            <div style={{fontSize:10,fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",color:"var(--gold-dk)",marginBottom:8}}>✦ {p.brand}</div>
+            <h1 className="serif" style={{fontSize:26,fontWeight:700,margin:"0 0 14px",lineHeight:1.25,color:"var(--forest)"}}>{p.name}</h1>
+            <div className="flex" style={{gap:12,marginBottom:18}}><RatBadge r={p.rating}/><span style={{fontSize:13,color:"var(--t3)"}}>{(p.rev||p.review_count||0).toLocaleString()} reviews</span>{p.badge&&<span className="chip chip-gold" style={{fontSize:9}}>{p.badge}</span>}</div>
+            <div style={{borderTop:"1px solid var(--border-gold)",borderBottom:"1px solid var(--border-gold)",padding:"16px 0",marginBottom:16}}>
+              <div className="flex" style={{gap:12,flexWrap:"wrap",alignItems:"baseline"}}>
+                <span className="serif" style={{fontSize:30,fontWeight:700,color:"var(--forest)"}}>{fmt(p.price)}</span>
+                <span className="strike" style={{fontSize:16}}>{fmt(p.mrp)}</span>
+                <span className="disc" style={{fontSize:16}}>{disc}% off</span>
+              </div>
+              {p.emi&&<div style={{fontSize:13,color:"var(--t3)",marginTop:6}}>EMI from <strong style={{color:"var(--forest)"}}>{p.emi}</strong></div>}
+            </div>
+            <p style={{fontSize:14,color:"var(--t2)",lineHeight:1.75,marginBottom:18}}>{p.description||p.desc}</p>
+            <div style={{marginBottom:18}}>
+              <div style={{fontSize:12,fontWeight:700,marginBottom:8,color:"var(--t2)",textTransform:"uppercase",letterSpacing:".05em"}}>📍 Check Delivery</div>
+              <div className="flex" style={{gap:8}}>
+                <input value={pin} onChange={e=>setPin(e.target.value.replace(/\D/,"").slice(0,6))} placeholder="6-digit pincode" style={{border:"1.5px solid var(--border-gold)",borderRadius:5,padding:"9px 13px",fontSize:13,width:175,outline:"none",background:"var(--cream)"}}/>
+                <button className="btn btn-green" style={{padding:"9px 16px",fontSize:11}} onClick={()=>setDel(pin.length===6?"✅ Delivery by Tomorrow – FREE":"⚠️ Enter valid pincode")}>Check</button>
+              </div>
+              {del&&<div style={{fontSize:13,fontWeight:700,marginTop:8,color:del.startsWith("✅")?"var(--emerald)":"var(--red)"}}>{del}</div>}
+            </div>
+            <div style={{background:"rgba(45,106,79,.06)",border:"1px solid var(--border-gold)",borderRadius:8,padding:"11px 15px",fontSize:12,fontWeight:700,color:"var(--emerald)",marginBottom:18}}>✅ In Stock &nbsp;·&nbsp; 🔄 7-Day Return &nbsp;·&nbsp; 🛡️ 1 Year Warranty</div>
+            <div className="flex" style={{gap:10,flexWrap:"wrap"}}>
+              <button className="btn btn-green" style={{padding:"12px 26px",fontSize:12}} onClick={()=>addToCart(p)}>🛒 Add to Cart</button>
+              <button className="btn btn-gold" style={{padding:"12px 26px",fontSize:12}} onClick={()=>{addToCart(p);setPage("cart");}}>⚡ Buy Now</button>
+              <button className="btn btn-ghost" style={{padding:"12px 14px",fontSize:16}} onClick={()=>toggleWish(p)}>{inWish(p.id)?"❤️":"🤍"}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="card" style={{padding:24,marginBottom:16}}>
+        <div className="tab-bar">{["specs","desc"].map(t=><button key={t} className={`tab${tab===t?" active":""}`} onClick={()=>setTab(t)}>{t==="specs"?"Specifications":"Description"}</button>)}</div>
+        {tab==="specs"&&<table className="spec-table" style={{width:"100%",borderCollapse:"collapse"}}><tbody>{Object.entries(specs).map(([k,v])=><tr key={k}><td>{k}</td><td style={{fontWeight:700,color:"var(--t1)"}}>{v}</td></tr>)}</tbody></table>}
+        {tab==="desc"&&<div style={{fontSize:14,lineHeight:1.85,color:"var(--t2)"}}>{p.description||p.desc||"No description available."}</div>}
+      </div>
+      {similar.length>0&&<div className="section"><h3 className="sec-head">✦ Similar Products</h3><div className="pgrid">{similar.map(pr=><PCard key={pr.id} p={pr}/>)}</div></div>}
+      {recentlyViewed.filter(r=>r.id!==p.id).length>0&&<div className="section"><h3 className="sec-head">🕐 Recently Viewed</h3><div className="pgrid">{recentlyViewed.filter(r=>r.id!==p.id).slice(0,4).map(pr=><PCard key={pr.id} p={pr}/>)}</div></div>}
+    </div>
+  );
+}
+
+/* ── Cart ── */
+function CartPage(){
+  const {cart,cartTotal,cartMRP,removeFromCart,updateQty,setPage,fmt,pct}=useContext(Ctx);
+  const savings=cartMRP-cartTotal;
+  if(!cart.length)return(<div style={{maxWidth:700,margin:"0 auto",padding:20}}><div className="empty anim-up"><div style={{fontSize:68,marginBottom:16}}>🛒</div><h2>Cart is empty</h2><p>Explore our collection.</p><button className="btn btn-green" style={{padding:"13px 32px",fontSize:12}} onClick={()=>setPage("home")}>Explore</button></div></div>);
+  return(
+    <div style={{maxWidth:1200,margin:"0 auto",padding:16,display:"flex",gap:16,alignItems:"flex-start",flexWrap:"wrap"}}>
+      <div style={{flex:1,minWidth:300}}>
+        <div className="card" style={{padding:"14px 22px",marginBottom:10}}><h2 className="serif" style={{fontSize:20,fontWeight:700,color:"var(--forest)"}}>My Cart <span style={{color:"var(--t3)",fontWeight:500,fontSize:15,fontFamily:"Jost"}}>({cart.length})</span></h2></div>
+        {cart.map(item=>(
+          <div key={item.id} className="card" style={{padding:20,marginBottom:10,display:"flex",alignItems:"center",gap:16}}>
+            <img src={item.img} alt={item.name} style={{width:82,height:82,objectFit:"contain",flexShrink:0}}/>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:11,color:"var(--t3)",fontWeight:700,textTransform:"uppercase",letterSpacing:".07em"}}>{item.brand}</div>
+              <div style={{fontSize:13,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.name}</div>
+              <div className="flex" style={{gap:10,marginTop:6,alignItems:"baseline"}}>
+                <span style={{fontSize:17,fontWeight:800,color:"var(--forest)"}}>{fmt(item.price)}</span>
+                <span className="strike" style={{fontSize:12}}>{fmt(item.mrp)}</span>
+                <span className="disc" style={{fontSize:12}}>{pct(item.price,item.mrp)}% off</span>
+              </div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:10,flexShrink:0}}>
+              <div className="qty-ctrl"><button onClick={()=>updateQty(item.id,item.qty-1)}>−</button><span>{item.qty}</span><button onClick={()=>updateQty(item.id,item.qty+1)}>+</button></div>
+              <button onClick={()=>removeFromCart(item.id)} style={{background:"transparent",border:"none",color:"var(--t3)",fontSize:18,cursor:"pointer"}}>🗑️</button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{width:295,flexShrink:0}}>
+        <div className="price-summary anim-up">
+          <h3 style={{fontSize:10,fontWeight:800,letterSpacing:".1em",textTransform:"uppercase",color:"var(--t3)",marginBottom:14,paddingBottom:12,borderBottom:"1px solid var(--border-gold)"}}>Price Details</h3>
+          <div className="pr"><span>Price ({cart.length} items)</span><span style={{fontWeight:700}}>{fmt(cartMRP)}</span></div>
+          <div className="pr"><span>Discount</span><span style={{fontWeight:700,color:"var(--emerald)"}}>−{fmt(savings)}</span></div>
+          <div className="pr"><span>Delivery</span><span style={{fontWeight:700,color:"var(--emerald)"}}>FREE</span></div>
+          <div className="pr total"><span>Total</span><span>{fmt(cartTotal)}</span></div>
+          <div style={{background:"rgba(45,106,79,.07)",border:"1px solid rgba(45,106,79,.15)",borderRadius:6,padding:"10px 14px",fontSize:13,fontWeight:700,color:"var(--emerald)",margin:"12px 0"}}>✦ You save {fmt(savings)}</div>
+          <button className="btn btn-gold" style={{width:"100%",justifyContent:"center",padding:"13px",fontSize:12,marginTop:4}} onClick={()=>setPage("checkout")}>Checkout →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Checkout ── */
+function CheckoutPage(){
+  const {cart,cartTotal,placeOrder,setPage,user,showToast,fmt}=useContext(Ctx);
+  const [step,setStep]=useState(1);
+  const [addresses,setAddresses]=useState([]);
+  const [selAddr,setSelAddr]=useState(null);
+  const [pay,setPay]=useState("cod");
+  const [loading,setLoading]=useState(false);
+
+  useEffect(()=>{
+    if(!user)return;
+    sb.from("addresses").select("*").eq("user_id",user.id).order("created_at",{ascending:false})
+      .then(({data})=>{ if(data){setAddresses(data);if(data.length>0)setSelAddr(data[0].id);} });
+  },[user]);
+
+  const handleOrder=async()=>{
+    if(!selAddr){showToast("Select a delivery address","error");return;}
+    const addr=addresses.find(a=>a.id===selAddr);
+    setLoading(true);
+    await placeOrder(addr,pay);
+    setLoading(false);
+  };
+
+  return(
+    <div style={{maxWidth:860,margin:"0 auto",padding:16}}>
+      <div className="stepper">
+        {["Address","Payment","Confirm"].map((s,i)=>(
+          <div key={s} className={`step${step===i+1?" active":step>i+1?" done":""}`} onClick={()=>step>i+1&&setStep(i+1)}>
+            <div className="step-n">{step>i+1?"✓":i+1}</div><span>{s}</span>
+          </div>
+        ))}
+      </div>
+      {step===1&&(
+        <div className="card anim-up" style={{padding:26}}>
+          <div className="flex-between" style={{marginBottom:18}}>
+            <h3 className="serif" style={{fontWeight:700,fontSize:19,color:"var(--forest)"}}>Delivery Address</h3>
+            <button className="btn btn-ghost" style={{fontSize:11}} onClick={()=>setPage("account-addr")}>+ Add New</button>
+          </div>
+          {addresses.length===0?(
+            <div style={{textAlign:"center",padding:"30px 0"}}>
+              <div style={{fontSize:40,marginBottom:12}}>📍</div>
+              <p style={{color:"var(--t3)",marginBottom:16}}>No saved addresses.</p>
+              <button className="btn btn-green" style={{fontSize:11}} onClick={()=>setPage("account-addr")}>Add Address</button>
+            </div>
+          ):(
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
+              {addresses.map(a=>(
+                <div key={a.id} className={`addr-card${selAddr===a.id?" sel":""}`} onClick={()=>setSelAddr(a.id)}>
+                  <div className="flex-between" style={{marginBottom:6}}><span className="chip chip-grn" style={{fontSize:9}}>{a.type||"Home"}</span>{selAddr===a.id&&<span style={{color:"var(--emerald)",fontSize:16}}>✓</span>}</div>
+                  <div style={{fontWeight:700,fontSize:13}}>{a.name}</div>
+                  <div style={{fontSize:12,color:"var(--t3)",marginTop:4,lineHeight:1.5}}>{a.address}, {a.city}, {a.state} – {a.pincode}</div>
+                  <div style={{fontSize:12,color:"var(--t3)"}}>📞 {a.phone}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          {addresses.length>0&&<button className="btn btn-green" style={{padding:"12px 28px",fontSize:11}} onClick={()=>setStep(2)}>Continue →</button>}
+        </div>
+      )}
+      {step===2&&(
+        <div className="card anim-up" style={{padding:26}}>
+          <h3 className="serif" style={{fontWeight:700,fontSize:19,marginBottom:20,color:"var(--forest)"}}>Payment Method</h3>
+          {[["cod","💵","Cash on Delivery","Pay on receipt"],["upi","📱","UPI","GPay, PhonePe, Paytm"],["card","💳","Card","Credit / Debit"],["netbanking","🏦","Net Banking","All major banks"]].map(([k,ic,lb,sub])=>(
+            <label key={k} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",border:`2px solid ${pay===k?"var(--emerald)":"var(--border)"}`,borderRadius:8,marginBottom:10,cursor:"pointer",background:pay===k?"rgba(45,106,79,.04)":"var(--ivory)",transition:"all .15s"}}>
+              <input type="radio" name="pay" value={k} checked={pay===k} onChange={()=>setPay(k)} style={{accentColor:"var(--emerald)"}}/>
+              <span style={{fontSize:22}}>{ic}</span>
+              <div><div style={{fontWeight:700,fontSize:14}}>{lb}</div><div style={{fontSize:12,color:"var(--t3)"}}>{sub}</div></div>
+            </label>
+          ))}
+          <button className="btn btn-green" style={{marginTop:8,padding:"12px 28px",fontSize:11}} onClick={()=>setStep(3)}>Continue →</button>
+        </div>
+      )}
+      {step===3&&(
+        <div className="card anim-up" style={{padding:26}}>
+          <h3 className="serif" style={{fontWeight:700,fontSize:19,marginBottom:20,color:"var(--forest)"}}>Confirm Order</h3>
+          {addresses.find(a=>a.id===selAddr)&&(
+            <div style={{background:"rgba(45,106,79,.04)",border:"1px solid var(--border-gold)",borderRadius:8,padding:15,marginBottom:18}}>
+              <div style={{fontSize:10,fontWeight:800,letterSpacing:".1em",textTransform:"uppercase",color:"var(--t3)",marginBottom:6}}>Delivering To</div>
+              <div style={{fontWeight:700}}>{addresses.find(a=>a.id===selAddr)?.name}</div>
+              <div style={{fontSize:12,color:"var(--t2)",marginTop:3}}>{addresses.find(a=>a.id===selAddr)?.address}, {addresses.find(a=>a.id===selAddr)?.city}</div>
+            </div>
+          )}
+          {cart.map(item=>(
+            <div key={item.id} className="flex-between" style={{padding:"11px 0",borderBottom:"1px solid var(--border)"}}>
+              <div className="flex" style={{gap:12}}><img src={item.img} alt="" style={{width:50,height:50,objectFit:"contain"}}/><div><div style={{fontSize:13,fontWeight:700}}>{item.name}</div><div style={{fontSize:12,color:"var(--t3)"}}>Qty: {item.qty}</div></div></div>
+              <div style={{fontWeight:800,color:"var(--forest)"}}>{fmt(item.price*item.qty)}</div>
+            </div>
+          ))}
+          <div className="flex-between" style={{marginTop:14,padding:"12px 0",borderTop:"2px solid var(--border-gold)"}}>
+            <span className="serif" style={{fontSize:18,fontWeight:700,color:"var(--forest)"}}>Total</span>
+            <span className="serif" style={{fontSize:20,fontWeight:700,color:"var(--forest)"}}>{fmt(cartTotal)}</span>
+          </div>
+          <button className="btn btn-gold" style={{width:"100%",justifyContent:"center",padding:"14px",fontSize:12,marginTop:14}} onClick={handleOrder} disabled={loading}>{loading?"Placing Order…":"✦ Place Order"}</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Orders Page ── */
+function OrdersPage(){
+  const {user,setPage,fmt}=useContext(Ctx);
+  const [orders,setOrders]=useState([]);const [loading,setLoading]=useState(true);const [selOrder,setSelOrder]=useState(null);
+
+  useEffect(()=>{
+    if(!user){setLoading(false);return;}
+    // Realtime subscription
+    const ch=sb.channel("orders-"+user.id)
+      .on("postgres_changes",{event:"*",schema:"public",table:"orders",filter:"user_id=eq."+user.id},()=>load())
+      .subscribe();
+    load();
+    return()=>sb.removeChannel(ch);
+  },[user]);
+
+  const load=async()=>{
+    if(!user)return;
+    const {data}=await sb.from("orders").select("*").eq("user_id",user.id).order("created_at",{ascending:false});
+    if(data)setOrders(data);
+    setLoading(false);
+  };
+
+  if(!user)return(<div className="empty"><div style={{fontSize:68,marginBottom:16}}>🔒</div><h2>Please Login</h2><button className="btn btn-green" style={{fontSize:12,padding:"12px 28px"}} onClick={()=>setPage("login")}>Login</button></div>);
+  if(loading)return<Spinner/>;
+  if(selOrder)return<OrderTrackPage order={orders.find(o=>o.id===selOrder)} onBack={()=>setSelOrder(null)}/>;
+  if(!orders.length)return(<div style={{maxWidth:700,margin:"0 auto",padding:20}}><div className="empty anim-up"><div style={{fontSize:68,marginBottom:16}}>📦</div><h2>No orders yet</h2><button className="btn btn-green" style={{padding:"12px 28px",fontSize:11}} onClick={()=>setPage("home")}>Start Shopping</button></div></div>);
+
+  return(
+    <div style={{maxWidth:900,margin:"0 auto",padding:16}}>
+      <h2 className="serif" style={{fontSize:24,fontWeight:700,marginBottom:18,color:"var(--forest)"}}>My Orders</h2>
+      {orders.map(o=>(
+        <div key={o.id} className="card anim-up" style={{marginBottom:12,overflow:"hidden"}}>
+          <div style={{background:"rgba(45,106,79,.04)",padding:"13px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid var(--border)",flexWrap:"wrap",gap:8}}>
+            <div><span style={{fontSize:11,color:"var(--t3)",fontWeight:700,textTransform:"uppercase"}}>Order # </span><span style={{fontWeight:800,fontSize:13}}>{o.id.split("-")[0].toUpperCase()}</span></div>
+            <span style={{fontSize:12,color:"var(--t2)"}}>{new Date(o.created_at).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span>
+            <span className={`chip ${STATUS_CHIP[o.status]||"chip-blue"}`}>{STATUS_LBL[o.status]||o.status}</span>
+            <span className="serif" style={{fontWeight:700,fontSize:17,color:"var(--forest)"}}>{fmt(o.total)}</span>
+            <button className="btn btn-ghost" style={{fontSize:11,padding:"7px 14px"}} onClick={()=>setSelOrder(o.id)}>Track Order</button>
+          </div>
+          <div style={{padding:16}}>
+            {o.items?.slice(0,2).map((item,i)=>(
+              <div key={i} className="flex" style={{gap:12,marginBottom:10}}>
+                <img src={item.img} alt="" style={{width:52,height:52,objectFit:"contain",background:"#f9f6ee",padding:4,borderRadius:4}}/>
+                <div><div style={{fontSize:13,fontWeight:700}}>{item.name}</div><div style={{fontSize:12,color:"var(--t3)"}}>Qty: {item.qty} · {fmt(item.price)}</div></div>
+              </div>
+            ))}
+            {o.items?.length>2&&<div style={{fontSize:12,color:"var(--t3)"}}>+{o.items.length-2} more item(s)</div>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function OrderTrackPage({order,onBack}){
+  const {fmt}=useContext(Ctx); if(!order)return null;
+  const curIdx=ORDER_STEPS.findIndex(s=>s.key===order.status);
+  const steps=typeof order.tracking_steps==="string"?JSON.parse(order.tracking_steps||"[]"):order.tracking_steps||[];
+
+  return(
+    <div style={{maxWidth:720,margin:"0 auto",padding:16}}>
+      <div style={{fontSize:12,color:"var(--gold-dk)",marginBottom:16,cursor:"pointer",fontWeight:700,textTransform:"uppercase",letterSpacing:".06em"}} onClick={onBack}>← Back to Orders</div>
+      <div className="card" style={{padding:24,marginBottom:16}}>
+        <div className="flex-between" style={{flexWrap:"wrap",gap:10,marginBottom:20,paddingBottom:16,borderBottom:"1px solid var(--border)"}}>
+          <div><h2 className="serif" style={{fontSize:20,fontWeight:700,color:"var(--forest)"}}>Order #{order.id.split("-")[0].toUpperCase()}</h2><div style={{fontSize:12,color:"var(--t3)",marginTop:3}}>{new Date(order.created_at).toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div></div>
+          <span className={`chip ${STATUS_CHIP[order.status]||"chip-blue"}`}>{STATUS_LBL[order.status]||order.status}</span>
+        </div>
+        <h3 style={{fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:".08em",color:"var(--t3)",marginBottom:18}}>Tracking Timeline</h3>
+        <div>
+          {ORDER_STEPS.map((step,i)=>{
+            const isDone=i<curIdx,isActive=i===curIdx,isPending=i>curIdx;
+            const entry=steps.find(t=>t.step===step.key);
+            return(
+              <div key={step.key} style={{display:"flex",gap:0,marginBottom:i<ORDER_STEPS.length-1?0:0}}>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:28,flexShrink:0}}>
+                  <div style={{width:14,height:14,borderRadius:"50%",background:isDone?"var(--emerald)":isActive?"var(--gold)":"var(--border)",flexShrink:0,marginTop:4,boxShadow:isActive?"0 0 0 5px rgba(201,150,58,.2)":isDone?"0 0 0 3px rgba(45,106,79,.15)":"none",zIndex:1}}/>
+                  {i<ORDER_STEPS.length-1&&<div style={{width:2,height:44,background:isDone?"var(--emerald)":"var(--border)",marginTop:2}}/>}
+                </div>
+                <div style={{paddingLeft:14,paddingBottom:i<ORDER_STEPS.length-1?0:0,minHeight:i<ORDER_STEPS.length-1?58:0}}>
+                  <div style={{fontSize:14,fontWeight:isActive?800:700,color:isPending?"var(--t3)":isActive?"var(--gold-dk)":"var(--t1)"}}>{step.icon} {step.label}</div>
+                  {entry?.time&&<div style={{fontSize:11,color:"var(--t3)",marginTop:2}}>{new Date(entry.time).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="card" style={{padding:20,marginBottom:14}}>
+        <h3 style={{fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:".08em",color:"var(--t3)",marginBottom:12}}>Delivery Address</h3>
+        <div style={{fontWeight:700}}>{order.address?.name}</div>
+        <div style={{fontSize:13,color:"var(--t2)",marginTop:3,lineHeight:1.6}}>{order.address?.address}, {order.address?.city}, {order.address?.state} – {order.address?.pincode}</div>
+        <div style={{fontSize:13,color:"var(--t3)"}}>📞 {order.address?.phone}</div>
+      </div>
+      <div className="card" style={{padding:20}}>
+        <h3 style={{fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:".08em",color:"var(--t3)",marginBottom:14}}>Items Ordered</h3>
+        {order.items?.map((item,i)=>(
+          <div key={i} className="flex-between" style={{padding:"11px 0",borderBottom:"1px solid var(--border)"}}>
+            <div className="flex" style={{gap:12}}><img src={item.img} alt="" style={{width:54,height:54,objectFit:"contain",background:"#f9f6ee",padding:6,borderRadius:6}}/><div><div style={{fontSize:13,fontWeight:700}}>{item.name}</div><div style={{fontSize:12,color:"var(--t3)"}}>Qty: {item.qty}</div></div></div>
+            <div style={{fontWeight:800,color:"var(--forest)"}}>{fmt(item.price*item.qty)}</div>
+          </div>
+        ))}
+        <div style={{paddingTop:14,display:"flex",justifyContent:"flex-end"}}><span className="serif" style={{fontSize:18,fontWeight:700,color:"var(--forest)"}}>Total: {fmt(order.total)}</span></div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Address Management ── */
+function AddressPage(){
+  const {user,setPage,showToast}=useContext(Ctx);
+  const [addresses,setAddresses]=useState([]);const [loading,setLoading]=useState(true);const [showForm,setShowForm]=useState(false);const [editAddr,setEditAddr]=useState(null);
+
+  const load=useCallback(async()=>{
+    if(!user)return;
+    const {data}=await sb.from("addresses").select("*").eq("user_id",user.id).order("created_at",{ascending:false});
+    if(data)setAddresses(data);setLoading(false);
+  },[user]);
+
+  useEffect(()=>{load();},[load]);
+
+  const del=async id=>{
+    if(!window.confirm("Delete this address?"))return;
+    await sb.from("addresses").delete().eq("id",id);
+    setAddresses(prev=>prev.filter(a=>a.id!==id));
+    showToast("Address deleted");
+  };
+
+  return(
+    <div style={{maxWidth:860,margin:"0 auto",padding:16}}>
+      <div className="flex-between" style={{marginBottom:20}}>
+        <h2 className="serif" style={{fontSize:24,fontWeight:700,color:"var(--forest)"}}>Manage Addresses</h2>
+        <button className="btn btn-green" style={{fontSize:11}} onClick={()=>{setEditAddr(null);setShowForm(true);}}>+ Add New</button>
+      </div>
+      {loading?<Spinner/>:(
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:14}}>
+          {addresses.map(a=>(
+            <div key={a.id} className="card" style={{padding:18}}>
+              <div className="flex-between" style={{marginBottom:10}}>
+                <span className="chip chip-grn" style={{fontSize:9}}>{a.type||"Home"}</span>
+                <div style={{display:"flex",gap:8}}>
+                  <button onClick={()=>{setEditAddr(a);setShowForm(true);}} style={{background:"transparent",border:"none",color:"var(--gold-dk)",fontSize:13,cursor:"pointer",fontWeight:700}}>Edit</button>
+                  <button onClick={()=>del(a.id)} style={{background:"transparent",border:"none",color:"var(--red)",fontSize:13,cursor:"pointer",fontWeight:700}}>Delete</button>
+                </div>
+              </div>
+              <div style={{fontWeight:700,fontSize:14}}>{a.name}</div>
+              <div style={{fontSize:13,color:"var(--t2)",marginTop:4,lineHeight:1.6}}>{a.address}</div>
+              <div style={{fontSize:13,color:"var(--t2)"}}>{a.city}, {a.state} – {a.pincode}</div>
+              <div style={{fontSize:12,color:"var(--t3)",marginTop:4}}>📞 {a.phone}</div>
+            </div>
+          ))}
+          {!addresses.length&&<div style={{gridColumn:"1/-1",textAlign:"center",padding:"40px 0",color:"var(--t3)"}}><div style={{fontSize:48,marginBottom:12}}>📍</div><div style={{fontWeight:600}}>No addresses saved yet.</div></div>}
+        </div>
+      )}
+      {showForm&&<AddressModal addr={editAddr} onClose={()=>setShowForm(false)} onSaved={()=>{setShowForm(false);load();}} user={user} showToast={showToast}/>}
+    </div>
+  );
+}
+
+function AddressModal({addr,onClose,onSaved,user,showToast}){
+  const [f,setF]=useState({name:addr?.name||"",phone:addr?.phone||"",type:addr?.type||"Home",address:addr?.address||"",city:addr?.city||"",state:addr?.state||"",pincode:addr?.pincode||""});
+  const [saving,setSaving]=useState(false);
+  const upd=(k,v)=>setF(x=>({...x,[k]:v}));
+  const save=async()=>{
+    if(!f.name||!f.phone||!f.address||!f.city||!f.state||!f.pincode){showToast("Fill all fields","error");return;}
+    setSaving(true);
+    try{
+      if(addr?.id){await sb.from("addresses").update({...f}).eq("id",addr.id);showToast("Address updated ✦");}
+      else{await sb.from("addresses").insert({...f,user_id:user.id});showToast("Address saved ✦");}
+      onSaved();
+    }catch(e){showToast("Error: "+e.message,"error");}
+    setSaving(false);
+  };
+  return(
+    <div className="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="md">
+        <div className="md-h"><h3 className="serif" style={{fontWeight:700,fontSize:18,color:"var(--forest)"}}>{addr?"Edit Address":"Add Address"}</h3><button onClick={onClose} style={{background:"transparent",border:"none",fontSize:20,cursor:"pointer",color:"var(--t3)"}}>✕</button></div>
+        <div className="md-b">
+          <div className="fg2">
+            <div className="ig"><label>Full Name</label><input value={f.name} onChange={e=>upd("name",e.target.value)} placeholder="Your name"/></div>
+            <div className="ig"><label>Phone</label><input value={f.phone} onChange={e=>upd("phone",e.target.value)} placeholder="10-digit number"/></div>
+            <div className="ig"><label>Address Type</label><select value={f.type} onChange={e=>upd("type",e.target.value)}><option>Home</option><option>Work</option><option>Other</option></select></div>
+            <div className="ig"><label>Pincode</label><input value={f.pincode} onChange={e=>upd("pincode",e.target.value.replace(/\D/,"").slice(0,6))} placeholder="6-digit"/></div>
+          </div>
+          <div className="ig"><label>Full Address</label><input value={f.address} onChange={e=>upd("address",e.target.value)} placeholder="House no, street, landmark"/></div>
+          <div className="fg2">
+            <div className="ig"><label>City</label><input value={f.city} onChange={e=>upd("city",e.target.value)} placeholder="City"/></div>
+            <div className="ig"><label>State</label><input value={f.state} onChange={e=>upd("state",e.target.value)} placeholder="State"/></div>
+          </div>
+        </div>
+        <div className="md-f"><button className="btn btn-ghost" style={{fontSize:11}} onClick={onClose}>Cancel</button><button className="btn btn-green" style={{fontSize:11}} onClick={save} disabled={saving}>{saving?"Saving…":"Save Address"}</button></div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Login ── */
+function LoginPage(){
+  const {setPage,showToast}=useContext(Ctx);
+  const [mode,setMode]=useState("login");
+  const [f,setF]=useState({name:"",email:"",pass:"",role:"buyer"});
+  const [err,setErr]=useState("");const [loading,setLoading]=useState(false);
+  const upd=(k,v)=>setF(x=>({...x,[k]:v}));
+
+  const handle=async()=>{
+    setErr("");setLoading(true);
+    try{
+      if(mode==="signup"){
+        const {error}=await sb.auth.signUp({email:f.email,password:f.pass,options:{data:{name:f.name,role:f.role}}});
+        if(error)throw error;
+        showToast("Account created! Check email to confirm ✦");setPage("home");
+      }else{
+        const {error}=await sb.auth.signInWithPassword({email:f.email,password:f.pass});
+        if(error)throw error;
+        showToast("Welcome back! ✦");setPage("home");
+      }
+    }catch(e){setErr(e.message);}
+    setLoading(false);
+  };
+
+  return(
+    <div className="login-wrap">
+      <div className="login-card anim-up" style={{display:"flex"}}>
+        <div className="login-left">
+          <div style={{fontSize:11,fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:"var(--gold-lt)",marginBottom:12}}>✦ FlipMart</div>
+          <h2 className="serif" style={{fontSize:28,fontWeight:700,marginBottom:14,color:"var(--cream)"}}>{mode==="login"?"Welcome Back":"Join Us"}</h2>
+          <p style={{fontSize:13,opacity:.75,lineHeight:1.7,color:"var(--mint)"}}>{mode==="login"?"Access orders, wishlist & addresses":"Create your account for a richer experience"}</p>
+          <div style={{fontSize:36,marginTop:24,opacity:.6}}>🌿</div>
+        </div>
+        <div style={{flex:1,padding:28}}>
+          {mode==="signup"&&(
+            <>
+              <div className="ig"><label>Full Name</label><input value={f.name} onChange={e=>upd("name",e.target.value)} placeholder="Your name"/></div>
+              <div className="ig"><label>Register As</label><select value={f.role} onChange={e=>upd("role",e.target.value)}><option value="buyer">Buyer</option><option value="seller">Seller</option></select></div>
+            </>
+          )}
+          <div className="ig"><label>Email</label><input type="email" value={f.email} onChange={e=>upd("email",e.target.value)} placeholder="your@email.com"/></div>
+          <div className="ig"><label>Password</label><input type="password" value={f.pass} onChange={e=>upd("pass",e.target.value)} placeholder="Min 6 characters"/></div>
+          {err&&<div className="err" style={{marginBottom:12}}>⚠️ {err}</div>}
+          <p style={{fontSize:11,color:"var(--t3)",lineHeight:1.6,marginBottom:16}}>By continuing you agree to our <span style={{color:"var(--emerald)"}}>Terms</span> & <span style={{color:"var(--emerald)"}}>Privacy Policy</span>.</p>
+          <button className="btn btn-gold" style={{width:"100%",justifyContent:"center",padding:"13px",fontSize:12,marginBottom:14}} onClick={handle} disabled={loading}>{loading?"Please wait…":mode==="login"?"Login →":"Create Account →"}</button>
+          <button style={{background:"transparent",border:"none",color:"var(--emerald)",fontWeight:700,cursor:"pointer",fontSize:13,width:"100%",textAlign:"center",fontFamily:"Jost"}} onClick={()=>{setMode(m=>m==="login"?"signup":"login");setErr("");}}>
+            {mode==="login"?"New here? Create Account":"Already registered? Login"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Account ── */
+function AccountPage(){
+  const {user,profile,logout,setPage}=useContext(Ctx);
+  if(!user)return(<div className="empty"><div style={{fontSize:68,marginBottom:16}}>🔒</div><h2>Please Login</h2><button className="btn btn-green" style={{fontSize:12,padding:"12px 24px"}} onClick={()=>setPage("login")}>Login</button></div>);
+  return(
+    <div style={{maxWidth:860,margin:"0 auto",padding:16}}>
+      <div className="card" style={{padding:24,marginBottom:16}}>
+        <div className="flex" style={{gap:16,marginBottom:20}}>
+          <div style={{width:56,height:56,borderRadius:"50%",background:"linear-gradient(135deg,var(--emerald),var(--forest))",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:900}}>{(profile?.name||user.email)[0]}</div>
+          <div><h2 className="serif" style={{fontSize:22,fontWeight:700,color:"var(--forest)"}}>{profile?.name||"User"}</h2><div style={{fontSize:13,color:"var(--t3)"}}>{user.email}</div>{profile?.role==="seller"&&<span className="chip chip-gold" style={{marginTop:4}}>Verified Seller</span>}</div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:12}}>
+          {[["📦","My Orders","orders"],["📍","Addresses","account-addr"],["❤️","Wishlist","wishlist"],["🛒","Cart","cart"]].map(([ic,lb,pg])=>(
+            <div key={pg} style={{background:"rgba(45,106,79,.05)",border:"1px solid var(--border)",borderRadius:8,padding:"16px 14px",cursor:"pointer",textAlign:"center",transition:"all .15s"}} onMouseEnter={e=>e.currentTarget.style.borderColor="var(--emerald)"} onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"} onClick={()=>setPage(pg)}>
+              <div style={{fontSize:28,marginBottom:8}}>{ic}</div><div style={{fontWeight:700,fontSize:13,color:"var(--forest)"}}>{lb}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{textAlign:"right"}}><button className="btn btn-red" style={{fontSize:12}} onClick={logout}>🚪 Logout</button></div>
+    </div>
+  );
+}
+
+/* ── Wishlist ── */
+function WishlistPage(){
+  const {wishlist,addToCart,toggleWish,setPage,fmt,pct}=useContext(Ctx);
+  if(!wishlist.length)return(<div style={{maxWidth:700,margin:"0 auto",padding:20}}><div className="empty anim-up"><div style={{fontSize:68,marginBottom:16}}>❤️</div><h2>Wishlist is empty</h2><button className="btn btn-green" style={{padding:"12px 28px",fontSize:11}} onClick={()=>setPage("home")}>Explore</button></div></div>);
+  return(
+    <div style={{maxWidth:1200,margin:"0 auto",padding:16}}>
+      <h2 className="serif" style={{fontSize:24,fontWeight:700,marginBottom:18,color:"var(--forest)"}}>Wishlist <span style={{fontWeight:500,fontSize:16,fontFamily:"Jost",color:"var(--t3)"}}>({wishlist.length})</span></h2>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(210px,1fr))",gap:16}}>
+        {wishlist.map(p=>(
+          <div key={p.id} className="card anim-in" style={{overflow:"hidden"}}>
+            <div style={{position:"relative",background:"linear-gradient(135deg,#f9f6ee,#f0ead8)",padding:18,textAlign:"center"}}>
+              <img src={p.img} alt={p.name} style={{height:140,objectFit:"contain",maxWidth:"100%"}}/>
+              <button onClick={()=>toggleWish(p)} style={{position:"absolute",top:8,right:8,background:"rgba(255,252,245,.92)",border:"1px solid var(--border-gold)",borderRadius:"50%",width:32,height:32,fontSize:15,cursor:"pointer"}}>❤️</button>
+            </div>
+            <div style={{padding:"14px 16px"}}>
+              <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",color:"var(--t3)",marginBottom:4}}>{p.brand}</div>
+              <div style={{fontSize:13,fontWeight:700,marginBottom:8,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{p.name}</div>
+              <div className="flex" style={{gap:8,marginBottom:12,alignItems:"baseline"}}>
+                <span style={{fontSize:16,fontWeight:800,color:"var(--forest)"}}>{fmt(p.price)}</span>
+                <span className="strike" style={{fontSize:12}}>{fmt(p.mrp)}</span>
+                <span className="disc" style={{fontSize:12}}>{pct(p.price,p.mrp)}% off</span>
+              </div>
+              <button className="btn btn-green" style={{width:"100%",justifyContent:"center",padding:"9px",fontSize:11}} onClick={()=>addToCart(p)}>Move to Cart</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── App ── */
+function App(){
+  const {page,authLoading}=useContext(Ctx);
+  if(authLoading)return(<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",flexDirection:"column",gap:16}}><div className="spinner"/><p style={{color:"var(--t3)",fontSize:14}}>Connecting…</p></div>);
+  const pages={home:<HomePage/>,listing:<ListingPage/>,product:<ProductPage/>,cart:<CartPage/>,checkout:<CheckoutPage/>,login:<LoginPage/>,orders:<OrdersPage/>,wishlist:<WishlistPage/>,account:<AccountPage/>,"account-addr":<AddressPage/>};
+  return(
+    <div style={{minHeight:"100vh",background:"var(--cream)"}}>
+      <Header/>
+      <main style={{minHeight:"calc(100vh - 120px)"}}>{pages[page]||<HomePage/>}</main>
+      <footer style={{background:"linear-gradient(135deg,var(--charcoal),var(--forest))",color:"rgba(255,255,255,.6)",padding:"32px 24px 20px",marginTop:48,textAlign:"center",borderTop:"1px solid rgba(201,150,58,.2)"}}>
+        <div className="serif" style={{fontSize:26,fontWeight:700,color:"rgba(255,255,255,.9)",marginBottom:6}}>Flip<span style={{color:"var(--gold-lt)"}}>Mart</span></div>
+        <div style={{fontSize:11,letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255,255,255,.3)",marginBottom:10}}>✦ Premium Collection ✦</div>
+        <div style={{fontSize:12}}>© 2025 FlipMart · 🔒 Secure · 🚚 Free Delivery · ⭐ 10M+ Customers</div>
+      </footer>
+      <Toast/>
+    </div>
+  );
+}
+
+ReactDOM.render(<Store><App/></Store>,document.getElementById("root"));
+</script>
+</body>
+</html>

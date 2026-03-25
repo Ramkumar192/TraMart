@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FlipMart – Seller Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --forest:#1a3c2e;--emerald:#2d6a4f;--jade:#40916c;--sage:#74c69d;
+  --cream:#fdf8f0;--parchment:#f5ede0;--gold:#c9963a;--gold-lt:#e8b96a;--gold-dk:#9a6f22;
+  --ivory:#fffcf5;--charcoal:#1c2b23;--border:rgba(45,106,79,.18);--border-gold:rgba(201,150,58,.3);
+  --t1:#1a2e24;--t2:#3d5a4a;--t3:#7a9d8a;--red:#c0392b;--blue:#2874f0;--orange:#e67e00;
+  --shadow:0 2px 16px rgba(26,60,46,.1);--shadow2:0 8px 40px rgba(26,60,46,.18);--r:8px;
+  --sw:234px;
+}
+body{font-family:'Jost',sans-serif;background:var(--cream);color:var(--t1);-webkit-font-smoothing:antialiased;display:flex;min-height:100vh}
+.serif{font-family:'Cormorant Garamond',serif}
+button,input,select,textarea{font-family:'Jost',sans-serif}
+button{cursor:pointer}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--parchment)}::-webkit-scrollbar-thumb{background:var(--sage);border-radius:10px}
+/* Layout */
+.sidebar{width:var(--sw);background:linear-gradient(180deg,var(--charcoal),var(--forest));position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;z-index:100;box-shadow:2px 0 20px rgba(0,0,0,.2)}
+.main-area{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;min-height:100vh;min-width:0}
+.topbar{background:var(--ivory);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:90;box-shadow:0 1px 8px rgba(26,60,46,.06)}
+.content{padding:24px 28px;flex:1}
+/* Sidebar items */
+.sb-logo{padding:22px 20px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-nav{flex:1;padding:14px 10px;overflow-y:auto}
+.sbi{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:6px;cursor:pointer;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;transition:all .15s;margin-bottom:3px;border:1px solid transparent;text-decoration:none}
+.sbi:hover{color:#fff;background:rgba(255,255,255,.08)}
+.sbi.active{color:var(--gold-lt);background:rgba(201,150,58,.15);border-color:rgba(201,150,58,.25)}
+.sb-foot{padding:14px 12px;border-top:1px solid rgba(255,255,255,.08)}
+/* Utils */
+.card{background:var(--ivory);border-radius:var(--r);box-shadow:var(--shadow);border:1px solid var(--border)}
+.btn{border:none;border-radius:4px;padding:9px 20px;font-weight:700;font-size:12px;letter-spacing:.04em;text-transform:uppercase;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-green{background:linear-gradient(135deg,var(--emerald),var(--forest));color:#fff}
+.btn-green:hover{background:linear-gradient(135deg,var(--jade),var(--emerald));transform:translateY(-1px)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-dk));color:#fff}
+.btn-gold:hover{transform:translateY(-1px)}
+.btn-ghost{background:transparent;border:1.5px solid var(--border-gold);color:var(--gold-dk)}
+.btn-ghost:hover{background:rgba(201,150,58,.06)}
+.btn-red{background:var(--red);color:#fff}.btn-red:hover{opacity:.88}
+.chip{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.chip-grn{background:var(--emerald);color:#fff}
+.chip-gold{background:linear-gradient(135deg,var(--gold),var(--gold-dk));color:#fff}
+.chip-red{background:var(--red);color:#fff}
+.chip-blue{background:var(--blue);color:#fff}
+.chip-orange{background:var(--orange);color:#fff}
+.chip-gray{background:#8a9a8e;color:#fff}
+.flex{display:flex;align-items:center}
+.flex-between{display:flex;align-items:center;justify-content:space-between}
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.anim-up{animation:fadeUp .4s ease both}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--emerald);border-radius:50%;animation:spin .7s linear infinite}
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 22px;border-radius:8px;color:#fff;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.25);animation:fadeIn .3s ease}
+/* Stat card */
+.stat-card{padding:20px;border-radius:10px;border:1px solid var(--border-gold);background:var(--ivory);position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(201,150,58,.07)}
+/* Table */
+.dt{width:100%;border-collapse:collapse;font-size:13px}
+.dt thead tr{background:rgba(45,106,79,.05);border-bottom:2px solid var(--border)}
+.dt th{padding:12px 14px;text-align:left;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);white-space:nowrap}
+.dt td{padding:12px 14px;border-bottom:1px solid rgba(45,106,79,.06);vertical-align:middle}
+.dt tbody tr:hover td{background:rgba(45,106,79,.03)}
+.dt tbody tr:last-child td{border-bottom:none}
+/* Form */
+.ig{margin-bottom:14px}
+.ig label{display:block;font-size:10px;font-weight:800;color:var(--t3);margin-bottom:5px;letter-spacing:.1em;text-transform:uppercase}
+.ig input,.ig select,.ig textarea{width:100%;border:1.5px solid var(--border);border-radius:5px;padding:10px 13px;font-size:13px;outline:none;transition:border-color .15s;background:var(--cream);color:var(--t1)}
+.ig input:focus,.ig select:focus,.ig textarea:focus{border-color:var(--jade)}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+/* Modal */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn .2s ease}
+.md{background:var(--ivory);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-width:580px;width:100%;max-height:90vh;overflow-y:auto;border:1px solid var(--border-gold)}
+.md-h{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--ivory);z-index:5}
+.md-b{padding:22px}
+.md-f{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;position:sticky;bottom:0;background:var(--ivory)}
+/* Bar chart */
+.bar{border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--jade),var(--emerald));transition:height .6s ease;position:relative;flex:1;cursor:pointer}
+.bar:hover{background:linear-gradient(180deg,var(--gold-lt),var(--gold))}
+/* Responsive */
+@media(max-width:900px){.sidebar{width:60px}.main-area{margin-left:60px}.sbi span{display:none}.sb-logo .lt{display:none}}
+</style>
+</head>
+<body>
+<div id="root" style="width:100%;display:flex"><div style="display:flex;align-items:center;justify-content:center;width:100%;height:100vh;flex-direction:column;gap:16px"><div class="spinner"></div><p style="color:var(--t3);font-family:Jost,sans-serif;font-size:14px">Loading Dashboard…</p></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useEffect,useContext,createContext,useRef,useCallback,useMemo}=React;
+
+/* ══════════════════════════════════════
+   SUPABASE CONFIG — paste your values
+══════════════════════════════════════ */
+const SUPABASE_URL  = 'https://vfvtousnbkraafrhrjal.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_nKOujMik6XpsfMONRpPJQQ_JlH6sqMX';
+/* ════════════════════════════════════ */
+
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
+
+const ORDER_STEPS=[
+  {key:"placed",label:"Order Placed",icon:"📋"},
+  {key:"confirmed",label:"Confirmed",icon:"✅"},
+  {key:"packed",label:"Packed",icon:"📦"},
+  {key:"shipped",label:"Shipped",icon:"🚚"},
+  {key:"out",label:"Out for Delivery",icon:"🛵"},
+  {key:"delivered",label:"Delivered",icon:"🎉"},
+];
+const SC={placed:"chip-blue",confirmed:"chip-grn",packed:"chip-grn",shipped:"chip-orange",out:"chip-orange",delivered:"chip-grn",cancelled:"chip-red"};
+const SL={placed:"Placed",confirmed:"Confirmed",packed:"Packed",shipped:"Shipped",out:"Out for Delivery",delivered:"Delivered",cancelled:"Cancelled"};
+const CATS=["Mobiles","Laptops","TVs","Men Fashion","Women Fashion","Kids Fashion","Home & Kitchen","Appliances","Books","Sports","Beauty","Toys","Electronics","Grocery"];
+
+const Ctx=createContext();
+function Store({children}){
+  const [view,setView]=useState("dashboard");
+  const [user,setUser]=useState(null);
+  const [profile,setProfile]=useState(null);
+  const [authLoading,setAL]=useState(true);
+  const [toast,setToast]=useState(null);
+  const showToast=useCallback((msg,type="success")=>{setToast({msg,type});setTimeout(()=>setToast(null),3000);},[]);
+  const fmt=n=>"₹"+n.toLocaleString("en-IN");
+
+  useEffect(()=>{
+    const {data:{subscription}}=sb.auth.onAuthStateChange(async(_,session)=>{
+      setUser(session?.user||null);
+      if(session?.user){
+        const {data}=await sb.from("profiles").select("*").eq("id",session.user.id).single();
+        setProfile(data);
+        if(data&&data.role!=="seller"){alert("Seller accounts only. Register as Seller from the main store.");await sb.auth.signOut();setUser(null);setProfile(null);}
+      }else{setProfile(null);}
+      setAL(false);
+    });
+    return()=>subscription.unsubscribe();
+  },[]);
+
+  const logout=useCallback(async()=>{await sb.auth.signOut();setUser(null);setProfile(null);showToast("Logged out");},[showToast]);
+
+  return <Ctx.Provider value={{view,setView,user,profile,authLoading,logout,toast,showToast,fmt}}>{children}</Ctx.Provider>;
+}
+
+function Toast(){const {toast}=useContext(Ctx);if(!toast)return null;const bg=toast.type==="error"?"#c0392b":toast.type==="warn"?"#e67e00":"linear-gradient(135deg,var(--emerald),var(--forest))";return <div className="toast" style={{background:bg}}>{toast.msg}</div>;}
+const Spinner=()=><div style={{display:"flex",justifyContent:"center",padding:50}}><div className="spinner"/></div>;
+
+function Sidebar(){
+  const {view,setView,user,profile,logout}=useContext(Ctx);
+  const items=[{k:"dashboard",i:"📊",l:"Dashboard"},{k:"orders",i:"📦",l:"Orders"},{k:"products",i:"🛍️",l:"Products"},{k:"analytics",i:"📈",l:"Analytics"}];
+  return(
+    <div className="sidebar">
+      <div className="sb-logo">
+        <div className="serif lt" style={{color:"var(--cream)",fontSize:22,fontWeight:700}}>Flip<span style={{color:"var(--gold-lt)"}}>Mart</span></div>
+        <div className="lt" style={{fontSize:10,color:"rgba(255,255,255,.45)",letterSpacing:".1em",textTransform:"uppercase",marginTop:3}}>Seller Portal</div>
+      </div>
+      <div className="sb-nav">
+        {items.map(it=><div key={it.k} className={`sbi${view===it.k?" active":""}`} onClick={()=>setView(it.k)}><span style={{fontSize:17,width:22,textAlign:"center"}}>{it.i}</span><span>{it.l}</span></div>)}
+      </div>
+      <div className="sb-foot">
+        {user&&<div style={{marginBottom:10}}><div style={{fontSize:12,color:"rgba(255,255,255,.85)",fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{profile?.name||user.email.split("@")[0]}</div><div style={{fontSize:10,color:"rgba(255,255,255,.45)",marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user.email}</div></div>}
+        <div className="sbi" onClick={logout} style={{color:"rgba(255,100,100,.8)"}}><span style={{fontSize:17,width:22,textAlign:"center"}}>🚪</span><span>Logout</span></div>
+      </div>
+    </div>
+  );
+}
+
+function Topbar(){
+  const {view,user,profile}=useContext(Ctx);
+  const titles={dashboard:"Dashboard",orders:"Manage Orders",products:"Products",analytics:"Analytics"};
+  return(
+    <div className="topbar">
+      <div><h1 className="serif" style={{fontSize:22,fontWeight:700,color:"var(--forest)"}}>{titles[view]||""}</h1><div style={{fontSize:11,color:"var(--t3)",marginTop:1}}>{new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div></div>
+      <div className="flex" style={{gap:12}}>
+        <a href="index.html" target="_blank" style={{color:"var(--gold-dk)",fontSize:12,fontWeight:700,textDecoration:"none",border:"1px solid var(--border-gold)",padding:"6px 14px",borderRadius:4}}>View Store ↗</a>
+        <div style={{width:34,height:34,borderRadius:"50%",background:"linear-gradient(135deg,var(--emerald),var(--forest))",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:14}}>{(profile?.name||user?.email||"S")[0]}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Dashboard ── */
+function Dashboard(){
+  const {fmt}=useContext(Ctx);
+  const [orders,setOrders]=useState([]);
+  const [products,setProducts]=useState([]);
+  const [loading,setLoading]=useState(true);
+
+  useEffect(()=>{
+    Promise.all([
+      sb.from("orders").select("*").order("created_at",{ascending:false}),
+      sb.from("products").select("*").eq("is_active",true)
+    ]).then(([{data:o},{data:p}])=>{
+      setOrders(o||[]);setProducts(p||[]);setLoading(false);
+    });
+    // Realtime orders
+    const ch=sb.channel("dash-orders").on("postgres_changes",{event:"*",schema:"public",table:"orders"},payload=>{
+      if(payload.eventType==="INSERT")setOrders(p=>[payload.new,...p]);
+      else if(payload.eventType==="UPDATE")setOrders(p=>p.map(o=>o.id===payload.new.id?payload.new:o));
+    }).subscribe();
+    return()=>sb.removeChannel(ch);
+  },[]);
+
+  const active=orders.filter(o=>o.status!=="cancelled");
+  const totalRev=active.reduce((s,o)=>s+o.total,0);
+  const now=new Date();
+  const thisMonth=active.filter(o=>{const d=new Date(o.created_at);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();});
+  const monthRev=thisMonth.reduce((s,o)=>s+o.total,0);
+  const pending=orders.filter(o=>!["delivered","cancelled"].includes(o.status)).length;
+
+  const monthlyData=useMemo(()=>{
+    const m=[];
+    for(let i=5;i>=0;i--){
+      const d=new Date();d.setMonth(d.getMonth()-i);
+      const mo=d.getMonth(),yr=d.getFullYear();
+      const rev=active.filter(o=>{const od=new Date(o.created_at);return od.getMonth()===mo&&od.getFullYear()===yr;}).reduce((s,o)=>s+o.total,0);
+      m.push({label:d.toLocaleString("en-IN",{month:"short"}),rev});
+    }return m;
+  },[active]);
+  const maxRev=Math.max(...monthlyData.map(m=>m.rev),1);
+
+  if(loading)return<Spinner/>;
+
+  return(
+    <div className="anim-up">
+      {/* KPIs */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(185px,1fr))",gap:16,marginBottom:24}}>
+        {[
+          {l:"Total Revenue",v:fmt(totalRev),i:"💰",c:"↑ all time"},
+          {l:"This Month",v:fmt(monthRev),i:"📅",c:`${thisMonth.length} orders`},
+          {l:"Total Orders",v:active.length,i:"📦",c:"active"},
+          {l:"Pending",v:pending,i:"⏳",c:pending>0?"Needs attention":"All clear"},
+          {l:"Products",v:products.length,i:"🛍️",c:"listed"},
+        ].map((s,i)=>(
+          <div key={i} className="stat-card anim-up" style={{animationDelay:`${i*.05}s`}}>
+            <div style={{fontSize:28,marginBottom:10}}>{s.i}</div>
+            <div className="serif" style={{fontSize:32,fontWeight:700,color:"var(--forest)",lineHeight:1}}>{s.v}</div>
+            <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",color:"var(--t3)",marginTop:4}}>{s.l}</div>
+            <div style={{fontSize:12,fontWeight:700,marginTop:6,color:"var(--emerald)"}}>{s.c}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
+        {/* Revenue bar chart */}
+        <div className="card" style={{padding:22}}>
+          <h3 className="serif" style={{fontSize:17,fontWeight:700,color:"var(--forest)",marginBottom:20}}>Revenue – Last 6 Months</h3>
+          <div style={{display:"flex",alignItems:"flex-end",gap:8,height:130}}>
+            {monthlyData.map((m,i)=>{
+              const h=Math.max(Math.round((m.rev/maxRev)*100),4);
+              return(
+                <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,height:"100%",justifyContent:"flex-end"}}>
+                  <span style={{fontSize:9,color:"var(--forest)",fontWeight:800,whiteSpace:"nowrap"}}>{m.rev>0?fmt(m.rev):"—"}</span>
+                  <div className="bar" style={{width:"100%",height:`${h}%`}}/>
+                  <span style={{fontSize:10,color:"var(--t3)",fontWeight:700}}>{m.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {/* Status breakdown */}
+        <div className="card" style={{padding:22}}>
+          <h3 className="serif" style={{fontSize:17,fontWeight:700,color:"var(--forest)",marginBottom:16}}>Order Status</h3>
+          {[["delivered","Delivered"],["shipped","In Transit"],["confirmed","Confirmed/Packed"],["placed","Placed"],["cancelled","Cancelled"]].map(([k,l])=>{
+            const cnt=orders.filter(o=>o.status===k).length;
+            const pct=orders.length>0?Math.round(cnt/orders.length*100):0;
+            return(
+              <div key={k} style={{marginBottom:11}}>
+                <div className="flex-between" style={{marginBottom:5}}><span style={{fontSize:12,fontWeight:700,color:"var(--t2)"}}>{l}</span><span style={{fontSize:12,fontWeight:800}}>{cnt} ({pct}%)</span></div>
+                <div style={{height:7,background:"rgba(45,106,79,.1)",borderRadius:4}}><div style={{height:"100%",width:`${pct}%`,borderRadius:4,background:k==="delivered"?"var(--emerald)":k==="cancelled"?"var(--red)":k==="shipped"||k==="out"?"var(--orange)":"var(--gold)",transition:"width .6s ease"}}/></div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Recent orders */}
+      <div className="card" style={{padding:22}}>
+        <h3 className="serif" style={{fontSize:17,fontWeight:700,color:"var(--forest)",marginBottom:16}}>Recent Orders</h3>
+        {orders.length===0?<div style={{textAlign:"center",padding:"30px 0",color:"var(--t3)"}}>No orders yet.</div>:(
+          <div style={{overflowX:"auto"}}><table className="dt">
+            <thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody>
+              {orders.slice(0,6).map(o=>(
+                <tr key={o.id}>
+                  <td style={{fontWeight:700,fontFamily:"monospace",fontSize:12,color:"var(--emerald)"}}>{o.id.split("-")[0].toUpperCase()}</td>
+                  <td><div style={{fontWeight:700,fontSize:12}}>{o.user_name}</div><div style={{fontSize:11,color:"var(--t3)"}}>{o.user_email}</div></td>
+                  <td style={{fontSize:12,color:"var(--t2)"}}>{o.items?.length||0}</td>
+                  <td style={{fontWeight:800,color:"var(--forest)"}}>{fmt(o.total)}</td>
+                  <td><span className={`chip ${SC[o.status]||"chip-blue"}`}>{SL[o.status]||o.status}</span></td>
+                  <td style={{fontSize:11,color:"var(--t3)"}}>{new Date(o.created_at).toLocaleDateString("en-IN")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table></div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Orders View ── */
+function OrdersView(){
+  const {showToast,fmt}=useContext(Ctx);
+  const [orders,setOrders]=useState([]);const [loading,setLoading]=useState(true);
+  const [selOrder,setSelOrder]=useState(null);const [filterStatus,setFilter]=useState("all");const [search,setSearch]=useState("");
+
+  useEffect(()=>{
+    sb.from("orders").select("*").order("created_at",{ascending:false}).then(({data})=>{setOrders(data||[]);setLoading(false);});
+    const ch=sb.channel("orders-all").on("postgres_changes",{event:"*",schema:"public",table:"orders"},payload=>{
+      if(payload.eventType==="INSERT")setOrders(p=>[payload.new,...p]);
+      else if(payload.eventType==="UPDATE")setOrders(p=>p.map(o=>o.id===payload.new.id?payload.new:o));
+    }).subscribe();
+    return()=>sb.removeChannel(ch);
+  },[]);
+
+  const updateStatus=async(orderId,newStatus)=>{
+    const order=orders.find(o=>o.id===orderId);
+    const steps=order?.tracking_steps||[];
+    const newStep={step:newStatus,time:new Date().toISOString(),done:true};
+    const updated=steps.some(s=>s.step===newStatus)?steps.map(s=>s.step===newStatus?newStep:s):[...steps,newStep];
+    const {error}=await sb.from("orders").update({status:newStatus,tracking_steps:updated}).eq("id",orderId);
+    if(error)showToast("Update failed: "+error.message,"error");
+    else showToast(`Status updated to "${SL[newStatus]}" ✦`);
+  };
+
+  const filtered=orders.filter(o=>(filterStatus==="all"||o.status===filterStatus)&&(!search||o.id.includes(search)||o.user_name?.toLowerCase().includes(search.toLowerCase())||o.user_email?.toLowerCase().includes(search.toLowerCase())));
+
+  if(loading)return<Spinner/>;
+  if(selOrder){const o=orders.find(x=>x.id===selOrder);return<OrderDetail order={o} onBack={()=>setSelOrder(null)} updateStatus={updateStatus} fmt={fmt}/>;}
+
+  return(
+    <div className="anim-up">
+      <div className="card" style={{padding:"13px 18px",marginBottom:16,display:"flex",gap:12,flexWrap:"wrap",alignItems:"center"}}>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search order ID, customer…" style={{border:"1.5px solid var(--border)",borderRadius:5,padding:"8px 13px",fontSize:13,flex:1,minWidth:200,background:"var(--cream)",outline:"none",fontFamily:"Jost"}}/>
+        <select value={filterStatus} onChange={e=>setFilter(e.target.value)} style={{border:"1.5px solid var(--border-gold)",borderRadius:5,padding:"8px 12px",fontSize:12,background:"var(--ivory)",fontFamily:"Jost",cursor:"pointer"}}>
+          <option value="all">All Statuses</option>
+          {Object.entries(SL).map(([k,v])=><option key={k} value={k}>{v}</option>)}
+        </select>
+        <span style={{fontSize:12,color:"var(--t3)",fontWeight:700}}>{filtered.length} orders</span>
+      </div>
+      <div className="card" style={{overflow:"hidden"}}>
+        <div style={{overflowX:"auto"}}>
+          <table className="dt">
+            <thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody>
+              {filtered.length===0&&<tr><td colSpan={8} style={{textAlign:"center",padding:"40px 0",color:"var(--t3)"}}>No orders found</td></tr>}
+              {filtered.map(o=>(
+                <tr key={o.id}>
+                  <td style={{fontWeight:700,fontFamily:"monospace",fontSize:12,color:"var(--emerald)",cursor:"pointer"}} onClick={()=>setSelOrder(o.id)}>{o.id.split("-")[0].toUpperCase()}</td>
+                  <td><div style={{fontWeight:700,fontSize:12}}>{o.user_name}</div><div style={{fontSize:11,color:"var(--t3)"}}>{o.user_email}</div></td>
+                  <td style={{fontSize:12}}>{o.items?.length||0} item(s)</td>
+                  <td style={{fontWeight:800,color:"var(--forest)"}}>{fmt(o.total)}</td>
+                  <td style={{fontSize:11,textTransform:"uppercase",fontWeight:700,color:"var(--t3)"}}>{o.payment}</td>
+                  <td><span className={`chip ${SC[o.status]||"chip-blue"}`}>{SL[o.status]||o.status}</span></td>
+                  <td style={{fontSize:11,color:"var(--t3)"}}>{new Date(o.created_at).toLocaleDateString("en-IN")}</td>
+                  <td>
+                    <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                      <button className="btn btn-ghost" style={{padding:"5px 10px",fontSize:10}} onClick={()=>setSelOrder(o.id)}>View</button>
+                      {o.status!=="delivered"&&o.status!=="cancelled"&&(
+                        <select value={o.status} onChange={e=>updateStatus(o.id,e.target.value)} style={{border:"1.5px solid var(--border-gold)",borderRadius:4,padding:"4px 8px",fontSize:11,background:"var(--ivory)",cursor:"pointer",fontFamily:"Jost"}}>
+                          {ORDER_STEPS.map(s=><option key={s.key} value={s.key}>{s.icon} {s.label}</option>)}
+                          <option value="cancelled">❌ Cancel</option>
+                        </select>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OrderDetail({order,onBack,updateStatus,fmt}){
+  if(!order)return null;
+  const curIdx=ORDER_STEPS.findIndex(s=>s.key===order.status);
+  const steps=order.tracking_steps||[];
+
+  return(
+    <div className="anim-up">
+      <div style={{fontSize:12,color:"var(--gold-dk)",marginBottom:16,cursor:"pointer",fontWeight:700,textTransform:"uppercase",letterSpacing:".06em"}} onClick={onBack}>← Back</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 340px",gap:18,alignItems:"flex-start"}}>
+        <div>
+          <div className="card" style={{padding:22,marginBottom:16}}>
+            <div className="flex-between" style={{flexWrap:"wrap",gap:10,marginBottom:18,paddingBottom:14,borderBottom:"1px solid var(--border)"}}>
+              <div><h2 className="serif" style={{fontSize:20,fontWeight:700,color:"var(--forest)"}}>Order #{order.id.split("-")[0].toUpperCase()}</h2><div style={{fontSize:12,color:"var(--t3)",marginTop:3}}>{new Date(order.created_at).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"})}</div></div>
+              <div className="flex" style={{gap:10}}>
+                <span className={`chip ${SC[order.status]||"chip-blue"}`}>{SL[order.status]||order.status}</span>
+                {order.status!=="delivered"&&order.status!=="cancelled"&&(
+                  <select value={order.status} onChange={e=>updateStatus(order.id,e.target.value)} style={{border:"1.5px solid var(--border-gold)",borderRadius:5,padding:"6px 12px",fontSize:12,background:"var(--ivory)",cursor:"pointer",fontFamily:"Jost"}}>
+                    {ORDER_STEPS.map(s=><option key={s.key} value={s.key}>{s.icon} {s.label}</option>)}
+                    <option value="cancelled">❌ Cancel Order</option>
+                  </select>
+                )}
+              </div>
+            </div>
+            <div style={{fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:".08em",color:"var(--t3)",marginBottom:12}}>Items Ordered</div>
+            {order.items?.map((item,i)=>(
+              <div key={i} className="flex-between" style={{padding:"11px 0",borderBottom:"1px solid var(--border)"}}>
+                <div className="flex" style={{gap:14}}>
+                  <img src={item.img} alt="" style={{width:52,height:52,objectFit:"contain",background:"#f9f6ee",padding:6,borderRadius:6,flexShrink:0}}/>
+                  <div><div style={{fontSize:13,fontWeight:700}}>{item.name}</div><div style={{fontSize:11,color:"var(--t3)"}}>Brand: {item.brand} · Qty: {item.qty}</div></div>
+                </div>
+                <div style={{fontWeight:800,color:"var(--forest)"}}>{fmt(item.price*item.qty)}</div>
+              </div>
+            ))}
+            <div style={{paddingTop:14,display:"flex",justifyContent:"flex-end"}}><span className="serif" style={{fontSize:18,fontWeight:700,color:"var(--forest)"}}>Total: {fmt(order.total)}</span></div>
+          </div>
+          {/* Tracking */}
+          <div className="card" style={{padding:22}}>
+            <div style={{fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:".08em",color:"var(--t3)",marginBottom:16}}>Tracking Timeline</div>
+            <div style={{position:"relative",paddingLeft:26}}>
+              <div style={{position:"absolute",left:6,top:6,bottom:6,width:2,background:"var(--border)",borderRadius:1}}/>
+              {ORDER_STEPS.map((step,i)=>{
+                const isDone=i<curIdx,isActive=i===curIdx,isPending=i>curIdx;
+                const entry=steps.find(t=>t.step===step.key);
+                return(
+                  <div key={step.key} style={{position:"relative",marginBottom:i<ORDER_STEPS.length-1?22:0}}>
+                    <div style={{position:"absolute",left:-20,top:3,width:13,height:13,borderRadius:"50%",background:isDone?"var(--emerald)":isActive?"var(--gold)":"var(--border)",boxShadow:isActive?"0 0 0 4px rgba(201,150,58,.2)":isDone?"0 0 0 3px rgba(45,106,79,.15)":"none"}}/>
+                    <div style={{fontWeight:isActive?800:700,fontSize:13,color:isPending?"var(--t3)":isActive?"var(--gold-dk)":"var(--t1)"}}>{step.icon} {step.label}</div>
+                    {entry?.time&&<div style={{fontSize:11,color:"var(--t3)",marginTop:2}}>{new Date(entry.time).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+        {/* Side info */}
+        <div>
+          <div className="card" style={{padding:20,marginBottom:14}}>
+            <div style={{fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:".08em",color:"var(--t3)",marginBottom:12}}>Customer</div>
+            <div className="flex" style={{gap:10}}>
+              <div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,var(--emerald),var(--forest))",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:14}}>{order.user_name?.[0]||"?"}</div>
+              <div><div style={{fontWeight:700,fontSize:13}}>{order.user_name}</div><div style={{fontSize:12,color:"var(--t3)"}}>{order.user_email}</div></div>
+            </div>
+          </div>
+          <div className="card" style={{padding:20,marginBottom:14}}>
+            <div style={{fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:".08em",color:"var(--t3)",marginBottom:12}}>Delivery Address</div>
+            <div style={{fontWeight:700,fontSize:13}}>{order.address?.name}</div>
+            <div style={{fontSize:12,color:"var(--t2)",marginTop:4,lineHeight:1.6}}>{order.address?.address}</div>
+            <div style={{fontSize:12,color:"var(--t2)"}}>{order.address?.city}, {order.address?.state} – {order.address?.pincode}</div>
+            <div style={{fontSize:12,color:"var(--t3)",marginTop:4}}>📞 {order.address?.phone}</div>
+          </div>
+          <div className="card" style={{padding:20}}>
+            <div style={{fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:".08em",color:"var(--t3)",marginBottom:10}}>Payment</div>
+            <div style={{fontWeight:700,fontSize:14}}>{order.payment==="cod"?"💵 Cash on Delivery":order.payment==="upi"?"📱 UPI":order.payment==="card"?"💳 Card":"🏦 Net Banking"}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Products View ── */
+function ProductsView(){
+  const {showToast,fmt,user}=useContext(Ctx);
+  const [products,setProducts]=useState([]);const [loading,setLoading]=useState(true);
+  const [showForm,setShowForm]=useState(false);const [editProd,setEditProd]=useState(null);const [search,setSearch]=useState("");
+
+  const load=useCallback(async()=>{
+    setLoading(true);
+    const {data}=await sb.from("products").select("*").order("created_at",{ascending:false});
+    setProducts(data||[]);setLoading(false);
+  },[]);
+
+  useEffect(()=>{load();},[load]);
+
+  const toggleActive=async(id,val)=>{
+    await sb.from("products").update({is_active:val}).eq("id",id);
+    setProducts(p=>p.map(x=>x.id===id?{...x,is_active:val}:x));
+    showToast(val?"Product activated":"Product deactivated");
+  };
+
+  const del=async id=>{
+    if(!window.confirm("Delete this product permanently?"))return;
+    await sb.from("products").delete().eq("id",id);
+    setProducts(p=>p.filter(x=>x.id!==id));
+    showToast("Product deleted");
+  };
+
+  const filtered=products.filter(p=>!search||p.name.toLowerCase().includes(search.toLowerCase())||p.brand?.toLowerCase().includes(search.toLowerCase()));
+
+  if(loading)return<Spinner/>;
+  return(
+    <div className="anim-up">
+      <div className="card" style={{padding:"13px 18px",marginBottom:16,display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search products…" style={{border:"1.5px solid var(--border)",borderRadius:5,padding:"8px 13px",fontSize:13,flex:1,minWidth:200,background:"var(--cream)",outline:"none",fontFamily:"Jost"}}/>
+        <span style={{fontSize:12,color:"var(--t3)",fontWeight:700}}>{filtered.length} products</span>
+        <button className="btn btn-green" style={{fontSize:11}} onClick={()=>{setEditProd(null);setShowForm(true);}}>+ Add Product</button>
+      </div>
+      <div className="card" style={{overflow:"hidden"}}>
+        <div style={{overflowX:"auto"}}>
+          <table className="dt">
+            <thead><tr><th>Image</th><th>Product</th><th>Category</th><th>Price</th><th>MRP</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              {filtered.length===0&&<tr><td colSpan={8} style={{textAlign:"center",padding:"40px 0",color:"var(--t3)"}}>No products. Add your first!</td></tr>}
+              {filtered.map(p=>(
+                <tr key={p.id} style={{opacity:p.is_active?1:.5}}>
+                  <td><img src={p.img||"https://via.placeholder.com/48"} alt="" style={{width:48,height:48,objectFit:"contain",borderRadius:4,background:"#f9f6ee",padding:4}}/></td>
+                  <td><div style={{fontWeight:700,fontSize:13,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div><div style={{fontSize:11,color:"var(--t3)"}}>{p.brand}</div>{p.badge&&<span className="chip chip-gold" style={{fontSize:9,marginTop:3}}>{p.badge}</span>}</td>
+                  <td style={{fontSize:12,color:"var(--t2)"}}>{p.category}</td>
+                  <td style={{fontWeight:800,color:"var(--forest)"}}>{fmt(p.price)}</td>
+                  <td style={{fontSize:12,textDecoration:"line-through",color:"var(--t3)"}}>{fmt(p.mrp)}</td>
+                  <td><span className={`chip ${p.stock==="Out of Stock"?"chip-red":"chip-grn"}`} style={{fontSize:9}}>{p.stock||"In Stock"}</span></td>
+                  <td><span className={`chip ${p.is_active?"chip-grn":"chip-gray"}`} style={{fontSize:9}}>{p.is_active?"Active":"Inactive"}</span></td>
+                  <td>
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                      <button className="btn btn-ghost" style={{padding:"4px 9px",fontSize:10}} onClick={()=>{setEditProd(p);setShowForm(true);}}>Edit</button>
+                      <button className="btn" style={{padding:"4px 9px",fontSize:10,background:p.is_active?"rgba(139,90,43,.1)":"rgba(45,106,79,.1)",color:p.is_active?"var(--gold-dk)":"var(--emerald)",border:"1px solid "+(p.is_active?"var(--border-gold)":"rgba(45,106,79,.3)")}} onClick={()=>toggleActive(p.id,!p.is_active)}>{p.is_active?"Deactivate":"Activate"}</button>
+                      <button className="btn btn-red" style={{padding:"4px 9px",fontSize:10}} onClick={()=>del(p.id)}>Del</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {showForm&&<ProductModal prod={editProd} onClose={()=>setShowForm(false)} onSaved={()=>{setShowForm(false);load();}} showToast={showToast} userId={user?.id}/>}
+    </div>
+  );
+}
+
+function ProductModal({prod,onClose,onSaved,showToast,userId}){
+  const [f,setF]=useState({name:prod?.name||"",brand:prod?.brand||"",category:prod?.category||"Mobiles",price:prod?.price||"",mrp:prod?.mrp||"",rating:prod?.rating||4.0,review_count:prod?.review_count||0,img:prod?.img||"",description:prod?.description||"",emi:prod?.emi||"",badge:prod?.badge||"",stock:prod?.stock||"In Stock",is_active:prod?.is_active!==false});
+  const [saving,setSaving]=useState(false);
+  const upd=(k,v)=>setF(x=>({...x,[k]:v}));
+  const save=async()=>{
+    if(!f.name||!f.price||!f.mrp||!f.category){showToast("Fill required fields","error");return;}
+    setSaving(true);
+    try{
+      const data={...f,price:+f.price,mrp:+f.mrp,rating:+f.rating,review_count:+f.review_count,specs:{}};
+      let err;
+      if(prod?.id)({error:err}=await sb.from("products").update(data).eq("id",prod.id));
+      else({error:err}=await sb.from("products").insert({...data,seller_id:userId}));
+      if(err)throw err;
+      showToast(prod?"Product updated ✦":"Product added ✦");onSaved();
+    }catch(e){showToast("Error: "+e.message,"error");}
+    setSaving(false);
+  };
+  return(
+    <div className="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="md">
+        <div className="md-h"><h3 className="serif" style={{fontWeight:700,fontSize:18,color:"var(--forest)"}}>{prod?"Edit Product":"Add Product"}</h3><button onClick={onClose} style={{background:"transparent",border:"none",fontSize:20,cursor:"pointer",color:"var(--t3)"}}>✕</button></div>
+        <div className="md-b">
+          <div className="ig"><label>Product Name *</label><input value={f.name} onChange={e=>upd("name",e.target.value)} placeholder="Full product name"/></div>
+          <div className="fg2">
+            <div className="ig"><label>Brand</label><input value={f.brand} onChange={e=>upd("brand",e.target.value)} placeholder="Brand"/></div>
+            <div className="ig"><label>Category *</label><select value={f.category} onChange={e=>upd("category",e.target.value)}>{CATS.map(c=><option key={c}>{c}</option>)}</select></div>
+            <div className="ig"><label>Selling Price ₹ *</label><input type="number" value={f.price} onChange={e=>upd("price",e.target.value)} placeholder="9999"/></div>
+            <div className="ig"><label>MRP ₹ *</label><input type="number" value={f.mrp} onChange={e=>upd("mrp",e.target.value)} placeholder="14999"/></div>
+            <div className="ig"><label>Rating (1-5)</label><input type="number" step=".1" min="1" max="5" value={f.rating} onChange={e=>upd("rating",e.target.value)}/></div>
+            <div className="ig"><label>Review Count</label><input type="number" value={f.review_count} onChange={e=>upd("review_count",e.target.value)}/></div>
+            <div className="ig"><label>EMI (optional)</label><input value={f.emi} onChange={e=>upd("emi",e.target.value)} placeholder="₹999/mo"/></div>
+            <div className="ig"><label>Badge (optional)</label><input value={f.badge} onChange={e=>upd("badge",e.target.value)} placeholder="Bestseller"/></div>
+          </div>
+          <div className="ig"><label>Image URL</label><input value={f.img} onChange={e=>upd("img",e.target.value)} placeholder="https://…"/></div>
+          {f.img&&<img src={f.img} alt="" style={{width:80,height:80,objectFit:"contain",marginBottom:12,borderRadius:6,background:"#f9f6ee",padding:6}}/>}
+          <div className="ig"><label>Description</label><textarea value={f.description} onChange={e=>upd("description",e.target.value)} rows={3} style={{resize:"vertical"}}/></div>
+          <div className="fg2">
+            <div className="ig"><label>Stock Status</label><select value={f.stock} onChange={e=>upd("stock",e.target.value)}><option>In Stock</option><option>Out of Stock</option><option>Limited Stock</option></select></div>
+            <div className="ig"><label>Visibility</label><select value={f.is_active} onChange={e=>upd("is_active",e.target.value==="true")}><option value="true">Active (Visible)</option><option value="false">Inactive (Hidden)</option></select></div>
+          </div>
+        </div>
+        <div className="md-f"><button className="btn btn-ghost" style={{fontSize:11}} onClick={onClose}>Cancel</button><button className="btn btn-green" style={{fontSize:11}} onClick={save} disabled={saving}>{saving?"Saving…":"Save Product"}</button></div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Analytics ── */
+function Analytics(){
+  const {fmt}=useContext(Ctx);
+  const [orders,setOrders]=useState([]);const [products,setProducts]=useState([]);const [loading,setLoading]=useState(true);
+
+  useEffect(()=>{
+    Promise.all([sb.from("orders").select("*").order("created_at",{ascending:false}),sb.from("products").select("*")]).then(([{data:o},{data:p}])=>{setOrders(o||[]);setProducts(p||[]);setLoading(false);});
+  },[]);
+
+  const active=orders.filter(o=>o.status!=="cancelled");
+  const totalRev=active.reduce((s,o)=>s+o.total,0);
+  const avgOrder=active.length>0?totalRev/active.length:0;
+
+  const productFreq={};
+  active.forEach(o=>o.items?.forEach(item=>{productFreq[item.name]=(productFreq[item.name]||0)+item.qty;}));
+  const topProducts=Object.entries(productFreq).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  const catRev={};
+  active.forEach(o=>o.items?.forEach(item=>{const cat=item.category||"Other";catRev[cat]=(catRev[cat]||0)+item.price*item.qty;}));
+  const topCats=Object.entries(catRev).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxCatRev=Math.max(...topCats.map(c=>c[1]),1);
+
+  const monthlyRev=useMemo(()=>{
+    const m=[];for(let i=5;i>=0;i--){const d=new Date();d.setMonth(d.getMonth()-i);const mo=d.getMonth(),yr=d.getFullYear();const rev=active.filter(o=>{const od=new Date(o.created_at);return od.getMonth()===mo&&od.getFullYear()===yr;}).reduce((s,o)=>s+o.total,0);m.push({label:d.toLocaleString("en-IN",{month:"short"}),rev});}return m;
+  },[active]);
+  const maxMR=Math.max(...monthlyRev.map(m=>m.rev),1);
+
+  if(loading)return<Spinner/>;
+
+  return(
+    <div className="anim-up">
+      {/* KPIs */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(175px,1fr))",gap:16,marginBottom:22}}>
+        {[
+          {l:"Total Revenue",v:fmt(totalRev),i:"💰"},
+          {l:"Active Orders",v:active.length,i:"📦"},
+          {l:"Avg Order Value",v:fmt(Math.round(avgOrder)),i:"📊"},
+          {l:"Products Listed",v:products.filter(p=>p.is_active).length,i:"🛍️"},
+          {l:"Conversion Rate",v:`${active.length>0?Math.round(active.filter(o=>o.status==="delivered").length/active.length*100):0}%`,i:"🎯"},
+        ].map((s,i)=>(
+          <div key={i} className="stat-card anim-up" style={{animationDelay:`${i*.05}s`}}>
+            <div style={{fontSize:26,marginBottom:8}}>{s.i}</div>
+            <div className="serif" style={{fontSize:32,fontWeight:700,color:"var(--forest)",lineHeight:1}}>{s.v}</div>
+            <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",color:"var(--t3)",marginTop:4}}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
+        <div className="card" style={{padding:22}}>
+          <h3 className="serif" style={{fontSize:17,fontWeight:700,color:"var(--forest)",marginBottom:20}}>Monthly Revenue</h3>
+          <div style={{display:"flex",alignItems:"flex-end",gap:8,height:130}}>
+            {monthlyRev.map((m,i)=>{const h=Math.max(Math.round((m.rev/maxMR)*100),4);return(
+              <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,height:"100%",justifyContent:"flex-end"}}>
+                <span style={{fontSize:9,color:"var(--forest)",fontWeight:800,whiteSpace:"nowrap"}}>{m.rev>0?fmt(m.rev):"—"}</span>
+                <div className="bar" style={{width:"100%",height:`${h}%`}}/>
+                <span style={{fontSize:10,color:"var(--t3)",fontWeight:700}}>{m.label}</span>
+              </div>
+            );})}
+          </div>
+        </div>
+        <div className="card" style={{padding:22}}>
+          <h3 className="serif" style={{fontSize:17,fontWeight:700,color:"var(--forest)",marginBottom:16}}>Revenue by Category</h3>
+          {topCats.length===0?<div style={{color:"var(--t3)",textAlign:"center",padding:"30px 0",fontSize:13}}>No data yet.</div>:
+          topCats.map(([cat,rev])=>{const pct=Math.round(rev/maxCatRev*100);return(
+            <div key={cat} style={{marginBottom:11}}>
+              <div className="flex-between" style={{marginBottom:5}}><span style={{fontSize:12,fontWeight:700,color:"var(--t2)"}}>{cat}</span><span style={{fontSize:12,fontWeight:800,color:"var(--forest)"}}>{fmt(rev)}</span></div>
+              <div style={{height:7,background:"rgba(45,106,79,.1)",borderRadius:4}}><div style={{height:"100%",width:`${pct}%`,borderRadius:4,background:"linear-gradient(90deg,var(--emerald),var(--jade))",transition:"width .6s ease"}}/></div>
+            </div>
+          );})}
+        </div>
+      </div>
+
+      <div className="card" style={{padding:22}}>
+        <h3 className="serif" style={{fontSize:17,fontWeight:700,color:"var(--forest)",marginBottom:16}}>Top Selling Products</h3>
+        {topProducts.length===0?<div style={{color:"var(--t3)",textAlign:"center",padding:"30px 0",fontSize:13}}>No sales data yet.</div>:(
+          <table className="dt"><thead><tr><th>#</th><th>Product</th><th>Units Sold</th><th>Share</th></tr></thead>
+          <tbody>{topProducts.map(([name,qty],i)=>{const maxQ=topProducts[0][1];return(
+            <tr key={name}>
+              <td style={{fontWeight:800,color:"var(--gold-dk)",fontSize:16}}>{i+1}</td>
+              <td style={{fontWeight:700,fontSize:13}}>{name}</td>
+              <td style={{fontWeight:800,color:"var(--forest)"}}>{qty} units</td>
+              <td style={{width:160}}><div style={{height:6,background:"rgba(45,106,79,.1)",borderRadius:3}}><div style={{height:"100%",width:`${Math.round(qty/maxQ*100)}%`,borderRadius:3,background:i===0?"var(--gold)":"var(--emerald)"}}/></div></td>
+            </tr>
+          );})}
+          </tbody></table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Seller Login ── */
+function SellerLogin(){
+  const {showToast}=useContext(Ctx);
+  const [f,setF]=useState({email:"",pass:""});
+  const [err,setErr]=useState("");const [loading,setLoading]=useState(false);
+  const upd=(k,v)=>setF(x=>({...x,[k]:v}));
+
+  const login=async()=>{
+    setErr("");setLoading(true);
+    const {data,error}=await sb.auth.signInWithPassword({email:f.email,password:f.pass});
+    if(error){setErr(error.message);setLoading(false);return;}
+    const {data:prof}=await sb.from("profiles").select("role").eq("id",data.user.id).single();
+    if(!prof||prof.role!=="seller"){await sb.auth.signOut();setErr("Seller accounts only. Register from the main store.");setLoading(false);return;}
+    showToast("Welcome to Seller Dashboard ✦");setLoading(false);
+  };
+
+  return(
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",width:"100%",height:"100vh",background:"var(--cream)"}}>
+      <div style={{width:420,background:"var(--ivory)",borderRadius:12,boxShadow:"0 20px 60px rgba(0,0,0,.12)",border:"1px solid var(--border-gold)",overflow:"hidden"}} className="anim-up">
+        <div style={{background:"linear-gradient(155deg,var(--forest),var(--charcoal))",padding:"36px 28px",color:"var(--cream)",position:"relative",overflow:"hidden"}}>
+          <div style={{fontSize:11,fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:"var(--gold-lt)",marginBottom:12}}>✦ FlipMart</div>
+          <h2 className="serif" style={{fontSize:28,fontWeight:700,marginBottom:10}}>Seller Portal</h2>
+          <p style={{fontSize:13,opacity:.7,lineHeight:1.6}}>Sign in to manage products, orders & analytics.</p>
+          <div style={{fontSize:36,marginTop:20,opacity:.6}}>🏪</div>
+          <div style={{position:"absolute",fontSize:180,opacity:.04,bottom:-40,right:-20,color:"var(--gold)"}}>✦</div>
+        </div>
+        <div style={{padding:28}}>
+          <div className="ig"><label>Email</label><input type="email" value={f.email} onChange={e=>upd("email",e.target.value)} placeholder="seller@email.com" onKeyDown={e=>e.key==="Enter"&&login()}/></div>
+          <div className="ig"><label>Password</label><input type="password" value={f.pass} onChange={e=>upd("pass",e.target.value)} placeholder="Password" onKeyDown={e=>e.key==="Enter"&&login()}/></div>
+          {err&&<div style={{color:"var(--red)",fontSize:12,marginBottom:12,fontWeight:600}}>⚠️ {err}</div>}
+          <button className="btn btn-gold" style={{width:"100%",justifyContent:"center",padding:"13px",fontSize:12}} onClick={login} disabled={loading}>{loading?"Signing in…":"Sign In →"}</button>
+          <p style={{fontSize:12,color:"var(--t3)",marginTop:14,textAlign:"center"}}>Not a seller yet? <a href="index.html" style={{color:"var(--emerald)",fontWeight:700,textDecoration:"none"}}>Register on main store</a></p>
+        </div>
+      </div>
+      <Toast/>
+    </div>
+  );
+}
+
+/* ── App ── */
+function App(){
+  const {view,user,authLoading}=useContext(Ctx);
+  if(authLoading)return(<div style={{display:"flex",alignItems:"center",justifyContent:"center",width:"100%",height:"100vh",flexDirection:"column",gap:16}}><div className="spinner"/><p style={{color:"var(--t3)",fontSize:14,fontFamily:"Jost"}}>Connecting…</p></div>);
+  if(!user)return<SellerLogin/>;
+  const views={dashboard:<Dashboard/>,orders:<OrdersView/>,products:<ProductsView/>,analytics:<Analytics/>};
+  return(
+    <>
+      <Sidebar/>
+      <div className="main-area">
+        <Topbar/>
+        <div className="content">{views[view]||<Dashboard/>}</div>
+      </div>
+      <Toast/>
+    </>
+  );
+}
+
+ReactDOM.render(<Store><App/></Store>,document.getElementById("root"));
+</script>
+</body>
+</html>
